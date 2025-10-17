@@ -63,58 +63,62 @@ L’équipe Durama
     <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8f9fa">
         <tr>
             <td align="center" style="padding: 40px 0;">
-                <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width:600px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.08); overflow:hidden;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width:600px; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.08); overflow:hidden; border: 1px solid #e5e7eb;">
                     <!-- En-tête -->
                     <tr>
-                        <td bgcolor="#1e3d59" style="padding: 30px; text-align: center; border-bottom: 4px solid #f39c12;">
-                            <h1 style="color: #ffffff; margin:0; font-size:28px; font-weight:700;">
-                                Durama <span style="color: #f39c12;">BTP</span>
+                        <td bgcolor="#000000" style="padding: 35px; text-align: center; border-bottom: 1px solid #e5e7eb;">
+                            <h1 style="color: #ffffff; margin:0; font-size:32px; font-weight:700; letter-spacing: -0.5px;">
+                                DURAMA
                             </h1>
-                            <p style="color: #ecf0f1; margin:10px 0 0; font-size:16px; font-weight:300;">
-                                Le meilleur du matériel BTP en un seul endroit
+                            <p style="color: #9ca3af; margin:12px 0 0; font-size:16px; font-weight:400;">
+                                Votre marketplace BTP premium
                             </p>
                         </td>
                     </tr>
                     
                     <!-- Contenu principal -->
                     <tr>
-                        <td style="padding: 40px 30px;">
-                            <h2 style="color: #2c3e50; margin-top:0;">Bonjour <strong>{user.first_name or "cher client"}</strong>,</h2>
-                            <p style="color: #34495e; line-height:1.6; font-size:16px;">
-                                Merci de vous être inscrit sur <strong style="color: #f39c12;">Durama</strong>, 
-                                votre marketplace dédiée à la vente de matériel et équipements BTP de qualité.
+                        <td style="padding: 45px 35px;">
+                            <h2 style="color: #111827; margin-top:0; font-size:24px; font-weight:600; margin-bottom: 8px;">
+                                Bonjour <strong style="color: #000000;">{user.first_name or "cher client"}</strong>,
+                            </h2>
+                            
+                            <p style="color: #374151; line-height:1.6; font-size:16px; margin-bottom: 20px;">
+                                Bienvenue sur <strong style="color: #000000;">Durama</strong>, la plateforme d'excellence 
+                                dédiée aux professionnels du BTP.
                             </p>
                             
-                            <p style="color: #34495e; line-height:1.6; font-size:16px;">
-                                Pour confirmer votre adresse e-mail et activer votre compte, veuillez utiliser le code OTP ci-dessous :
+                            <p style="color: #374151; line-height:1.6; font-size:16px; margin-bottom: 30px;">
+                                Pour finaliser votre inscription et accéder à l'ensemble de nos services, 
+                                veuillez utiliser le code de vérification ci-dessous :
                             </p>
                             
                             <!-- Code OTP -->
-                            <div style="text-align:center; margin:30px 0; padding:20px; background-color:#f9f9f9; border-radius:6px; border-left:4px solid #f39c12;">
-                                <p style="color: #7f8c8d; margin:0 0 10px; font-size:14px;">Votre code de vérification :</p>
-                                <span style="font-size:32px; font-weight:bold; color: #2c3e50; letter-spacing:4px; padding:12px 20px; background-color:#ecf0f1; border-radius:4px; display:inline-block;">
+                            <div style="text-align:center; margin:35px 0; padding:25px; background-color:#f9fafb; border-radius:8px; border: 1px solid #e5e7eb;">
+                                <p style="color: #6b7280; margin:0 0 12px; font-size:14px; font-weight:500;">VOTRE CODE DE VÉRIFICATION</p>
+                                <span style="font-size:36px; font-weight:700; color: #000000; letter-spacing:6px; padding:16px 24px; background-color:#ffffff; border-radius:6px; display:inline-block; border: 2px solid #000000;">
                                     {otp.otp_code}
                                 </span>
                             </div>
                             
-                            <p style="color: #e74c3c; font-size:14px; text-align:center;">
-                                ⏳ Ce code expirera dans <strong>5 minutes</strong>
+                            <p style="color: #dc2626; font-size:14px; text-align:center; font-weight:500; margin: 20px 0 30px;">
+                                ⏳ Code valable pendant <strong>5 minutes</strong>
                             </p>
                             
-                            <p style="color: #34495e; line-height:1.6; font-size:16px;">
-                                Une fois votre compte activé, vous pourrez :
+                            <p style="color: #374151; line-height:1.6; font-size:16px; margin-bottom: 20px;">
+                                Une fois votre compte activé, vous bénéficierez de :
                             </p>
                             
-                            <ul style="color: #34495e; line-height:1.8;">
-                                <li>Accéder à un large choix de matériel BTP</li>
-                                <li>Commander vos équipements en toute sécurité</li>
-                                <li>Bénéficier d’offres et promotions exclusives</li>
-                                <li>Gagner du temps grâce à une plateforme intuitive</li>
+                            <ul style="color: #374151; line-height:1.7; margin: 0 0 30px 0; padding-left: 20px;">
+                                <li style="margin-bottom: 8px;">Accès à notre catalogue premium de matériel BTP</li>
+                                <li style="margin-bottom: 8px;">Commandes sécurisées et suivies en temps réel</li>
+                                <li style="margin-bottom: 8px;">Offres exclusives réservées aux professionnels</li>
+                                <li style="margin-bottom: 8px;">Interface optimisée pour une gestion simplifiée</li>
                             </ul>
                             
-                            <div style="text-align:center; margin:30px 0;">
-                                <a href="https://durama.com" style="background-color: #f39c12; color: white; padding: 14px 28px; text-decoration: none; border-radius:4px; font-weight:500; display:inline-block; font-size:16px;">
-                                    Accéder à mon compte
+                            <div style="text-align:center; margin:35px 0 25px;">
+                                <a href="https://durama.com" style="background-color: #000000; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius:8px; font-weight:600; display:inline-block; font-size:16px; border: 1px solid #000000; transition: all 0.3s ease;">
+                                    Accéder à la plateforme
                                 </a>
                             </div>
                         </td>
@@ -122,12 +126,13 @@ L’équipe Durama
                     
                     <!-- Pied de page -->
                     <tr>
-                        <td bgcolor="#1e3d59" style="padding: 25px; text-align: center;">
-                            <p style="color: #ecf0f1; margin:0; font-size:14px;">
+                        <td bgcolor="#f9fafb" style="padding: 25px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="color: #6b7280; margin:0 0 8px; font-size:14px;">
                                 &copy; 2025 Durama. Tous droits réservés.
                             </p>
-                            <p style="color: #bdc3c7; margin:10px 0 0; font-size:12px;">
-                                Si vous n'avez pas demandé ce code, ignorez simplement ce mail.
+                            <p style="color: #9ca3af; margin:0; font-size:12px; line-height: 1.5;">
+                                Si vous n'êtes pas à l'origine de cette demande,<br>
+                                veuillez ignorer cet email.
                             </p>
                         </td>
                     </tr>
