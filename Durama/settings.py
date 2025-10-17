@@ -121,9 +121,7 @@ REST_FRAMEWORK = {
     )
     
 }
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # ton front React (Vite)
-]
+
 
 CORS_ALLOW_ALL_ORIGINS = True
 # Internationalization
@@ -136,8 +134,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-import os
-ALLOWED_HOSTS = ["*"]
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -181,7 +178,19 @@ MEDIA_URL = '/media/'         # URL pour accéder aux fichiers
 MEDIA_ROOT = BASE_DIR / 'media'
 
 
+
+CORS_ALLOWED_ORIGINS = [
+    "https://durama-front.vercel.app",
+    "https://earl-trademark-comic-pacific.trycloudflare.com",
+    "http://localhost:5173"
+]
 # settings.py
 SESSION_COOKIE_DOMAIN = ".trycloudflare.com"  # autorise le domaine du tunnel
 CSRF_COOKIE_DOMAIN = ".trycloudflare.com"
-CSRF_TRUSTED_ORIGINS = ["https://earl-trademark-comic-pacific.trycloudflare.com"]
+
+SESSION_COOKIE_DOMAIN = ".trycloudflare.com"
+CSRF_COOKIE_DOMAIN = ".trycloudflare.com"
+CSRF_TRUSTED_ORIGINS = [
+    "https://earl-trademark-comic-pacific.trycloudflare.com",
+    "https://durama-front.vercel.app"
+]
