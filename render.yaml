@@ -1,0 +1,27 @@
+# render.yaml pour Durama
+
+# --- Base de données ---
+databases:
+  - name: duramadb          # identifiant de la base dans Render
+    plan: free              # plan gratuit
+    databaseName: durama    # nom réel de la base dans PostgreSQL
+    user: durama_user       # utilisateur de la base
+
+# --- Services web (backend Django) ---
+services:
+  - type: web
+    name: durama-backend     # nom du service Render
+    plan: free
+    env: python
+    runtime: python
+    buildCommand: "pip install -r requirements.txt"  # installer les dépendances
+    startCommand: "gunicorn Durama.wsgi"           # lancer le serveur Django
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: duramadb
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WEB_CONCURRENCY
+        value: 4
