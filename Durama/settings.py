@@ -29,7 +29,8 @@ ALLOWED_HOSTS = [
     "earl-trademark-comic-pacific.trycloudflare.com",
     "localhost", 
     "127.0.0.1",
-    "durama-project.onrender.com"
+    "durama-project.onrender.com",
+    "http://localhost:5173/"
 ]
 
 
@@ -165,6 +166,8 @@ EMAIL_HOST_PASSWORD = "xdcn gxrh coah dcqb"
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 AUTH_USER_MODEL = 'DuramaProject.User'
 
+if not DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 SWAGGER_SETTINGS = {
     "SECURITY_DEFINITIONS": {
@@ -183,7 +186,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 CORS_ALLOWED_ORIGINS = [
     "https://durama-front.vercel.app",
     "https://earl-trademark-comic-pacific.trycloudflare.com",
-    "http://localhost:5173"
+    "http://localhost:5173",
+    
 ]
 # settings.py
 SESSION_COOKIE_DOMAIN = ".trycloudflare.com"  # autorise le domaine du tunnel
