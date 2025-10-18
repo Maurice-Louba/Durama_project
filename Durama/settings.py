@@ -154,19 +154,21 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     
     'AUTH_HEADER_TYPES': ('Bearer',),               
 }
-AUTH_USER_MODEL = "marketplace.User"
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+AUTH_USER_MODEL = "DuramaProject.User"
 
+import os
+
+# ⚙️ Configuration par défaut (pour envoi de vrais mails)
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "mauricelouba9@gmail.com"
-EMAIL_HOST_PASSWORD = "xdcn gxrh coah dcqb"  
+EMAIL_HOST_PASSWORD = "xdcn gxrh coah dcqb"
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-AUTH_USER_MODEL = 'DuramaProject.User'
 
-if not DEBUG:
+# 🚀 En environnement Render (production) → afficher l'OTP dans les logs
+if not DEBUG or os.environ.get("RENDER") == "true":
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 SWAGGER_SETTINGS = {
