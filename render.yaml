@@ -14,8 +14,15 @@ services:
     plan: free
     env: python
     runtime: python
-    buildCommand: "pip install -r requirements.txt"  # installer les dépendances
-    startCommand: "gunicorn Durama.wsgi"           # lancer le serveur Django
+
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py makemigrations --noinput || true
+      python manage.py migrate --noinput || true
+
+    startCommand: "gunicorn Durama.wsgi"
+
     envVars:
       - key: DATABASE_URL
         fromDatabase:
