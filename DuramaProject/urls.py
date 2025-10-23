@@ -57,6 +57,8 @@ urlpatterns = [
     path('produits-par-etiquette/<int:etiquette_id>/', Produit_views.produits_par_etiquette, name="produits_par_etiquette"),
     path('produit-par-gros-categorie/<str:gros_categorie>/',Produit_views.produitpargroscategorie,name="produit_par_grosse_categorie"),
     path('quatres-premiers-produits/<str:gros_categorie>/',Produit_views.QuatresPremiers,name="quatre_premier_produits"),
+    path('quatres-dernier-produits/',Produit_views.produitRecents,name="quatres_derniers_produits"),
+    path('quatres-gros-categorie/<str:gros_categorie>/',Produit_views.quatre_produit_gros_oeuvres,name="quatre_element_du_gros_oveures"),
     
     # Images de produits
     path('images/', ProduitIlmage_views.liste_images, name="liste_images"),
@@ -103,6 +105,12 @@ urlpatterns = [
     #PanierItem
     path('panier/items/', PanierItem_views.panier_items, name='panier_items'),
     path('panier/items/<int:pk>/', PanierItem_views.panier_item_detail, name='panier_item_detail'),
+    path('deuxelement/',PanierItem_views.deuxElementsDuPanier,name="deux_elements_du_panier"),
+    path('prix_total/',PanierItem_views.total_panier,name="prix_de_tous_les_produits"),
+    path('changer_quantiter/<int:pk>/',PanierItem_views.augmenter_quantite, name="changer_la_quantite"),
+    path('diminuer_quantiter/<int:pk>/',PanierItem_views.dimunuer_quantite,name="diminuer_quantité"),
+    path('supprimer_un_item/<int:pk>/',PanierItem_views.supprimer_item,name="supprimer_un_item"),
+    path('vider_un_panier/',PanierItem_views.vider_panier,name="supprimer_le_contenu_un_panier"),
     #Commande
     path('commande/faire/', Commande_view.faire_une_commande, name='faire_une_commande'),
     path('commandes/', Commande_view.tous_les_commandes, name='tous_les_commandes'),

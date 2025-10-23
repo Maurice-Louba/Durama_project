@@ -197,7 +197,12 @@ CSRF_COOKIE_DOMAIN = ".trycloudflare.com"
 
 SESSION_COOKIE_DOMAIN = ".trycloudflare.com"
 CSRF_COOKIE_DOMAIN = ".trycloudflare.com"
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8004",
+    "http://localhost:8004",
     "https://earl-trademark-comic-pacific.trycloudflare.com",
-    "https://durama-front.vercel.app"
+    "https://durama-front.vercel.app",
 ]

@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import *
+from DuramaProject.models import Panier
 
 
 User = get_user_model()
@@ -100,6 +101,7 @@ class ProduitSerialized(serializers.ModelSerializer):
             "sku",
             "type_produit",
             "nom_vendeur",
+            "livraison_gratuite",
             "description_courte",
             "description_longue",
             "prix_fournisseur",
@@ -199,14 +201,63 @@ class PanierSerialized(serializers.ModelSerializer):
     def create(self, validated_data):
         user=self.context['request'].user
         return Panier.objects.create(user=user,**validated_data)
+    
+
+
+
+
+
 class PanierItemSerialized(serializers.ModelSerializer):
-    panier=PanierSerialized(read_only=True)
-    produit=ProduitSerialized(read_only=True)
-    produit_variable=ProduitVariableSerialized(read_only=True)
-    attribut_valeur=AttributSerialized(read_only=True)
+    # --- Champs en lecture seule (pour GET) ---
+    panier = PanierSerialized(read_only=True)
+    produit = ProduitSerialized(read_only=True)
+    produit_variable = ProduitVariableSerialized(read_only=True)
+    attribut_valeur = AttributSerialized(read_only=True)
+
+    # --- Champs en écriture (pour POST/PUT/PATCH) ---
+    produit_id = serializers.PrimaryKeyRelatedField(
+        queryset=Produit.objects.all(),
+        source="produit",
+        write_only=True,
+        required=True
+    )
+    produit_variable_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProduitVariable.objects.all(),
+        source="produit_variable",
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    attribut_valeur_id = serializers.PrimaryKeyRelatedField(
+        queryset=Attribut.objects.all(),
+        source="attribut_valeur",
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
-        model=ContenuPanier
-        fields=['id','panier','produit','produit_varable','attribut_valeur','quantite','is_variable','created_at','updated_at']
+        model = ContenuPanier
+        fields = [
+            "id",
+            "panier",
+            "produit",
+            "produit_variable",
+            "attribut_valeur",
+            "quantite",
+            "is_variable",
+            "created_at",
+            "updated_at",
+            # champs écriture
+            "produit_id",
+            "produit_variable_id",
+            "attribut_valeur_id",
+        ]
+
+
+
+        
+        
 class CommandeSerialized(serializers.ModelSerializer):
     user = UserSerialized(read_only=True)
     panier = PanierSerialized(read_only=True)

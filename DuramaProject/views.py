@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.shortcuts import render
 from rest_framework import generics, permissions
-from .models import User,EmailOTP
+from .models import User,EmailOTP,Panier
 from .serializer import RegisterSerializer
 from django.core.mail import send_mail
 from rest_framework import status
@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.exceptions import ObjectDoesNotExist
+
 # Create your views here.
 
 
@@ -174,6 +175,9 @@ def verify_otp(request):
         user.is_active = True
         user.save()
 
+        # Création automatique du panier
+        Panier.objects.create(user=user)
+
         # Suppression de l'OTP utilisé
         otp_obj.delete()
 
@@ -189,3 +193,4 @@ def verify_otp(request):
     
     except ObjectDoesNotExist:
         return Response({'error': 'OTP invalide ou utilisateur non trouvé'}, status=400)
+

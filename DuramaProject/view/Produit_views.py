@@ -146,3 +146,24 @@ def QuatresPremiers(request,gros_categorie):
     produit=Produit.objects.filter(categorie__in=categorie)[:5]
     produitSerial=ProduitSerialized(produit,many=True)
     return Response(produitSerial.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def produitRecents(request):
+    try:
+        produits=Produit.objects.filter().order_by('-created_at')[:4]
+    except Produit.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    produitSeriali=ProduitSerialized(produits,many=True)
+    return Response(produitSeriali.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def quatre_produit_gros_oeuvres(request,gros_categorie):
+    try:
+        categorie=Categorie.objects.filter(gros_categorie=gros_categorie)
+    except Categorie.DoesNotExist:
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    produits=Produit.objects.filter(categorie__in=categorie).order_by("?")[:4]
+    produitsSeria=ProduitSerialized(produits,many=True)
+    return Response(produitsSeria.data)

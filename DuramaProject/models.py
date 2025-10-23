@@ -117,7 +117,7 @@ class TypeAttribut(models.Model):
 class Attribut(models.Model):
     typeAttribut=models.ForeignKey(TypeAttribut,on_delete=models.CASCADE,related_name="type_d_attribut")
     valeur=models.CharField(max_length=150)
-    code_Couleur=models.CharField(max_length=50)
+    code_Couleur=models.CharField(max_length=50,blank=True,null=True)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     def __str__(self):
@@ -142,9 +142,9 @@ class Produit(models.Model):
         ('variable', 'Variable'),
     ]
     ETAT_STOCK = [
-        ('en_stock', 'En stock'),
-        ('rupture_stock', 'Rupture de stock'),
-        ('sur_commande', 'Sur commande'),
+        ('en stock', 'En stock'),
+        ('rupture stock', 'Rupture de stock'),
+        ('sur commande', 'Sur commande'),
     ]
     STATUS_RECOMMANDATION = [
         ('en_vedette', 'En vedette'),
@@ -189,10 +189,10 @@ class Produit(models.Model):
     superficie = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     taille = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     materiau = models.CharField(max_length=150, blank=True, null=True)
-
     est_publie = models.BooleanField(default=True)
     est_original = models.BooleanField(default=True)
     caracteristiques = models.JSONField(default=dict, blank=True, null=True)
+    livraison_gratuite=models.BooleanField(default=False)
 
     status = models.CharField(max_length=50, choices=STATUS_RECOMMANDATION, default="publie")
 
@@ -332,8 +332,8 @@ class Panier(models.Model):
 class ContenuPanier(models.Model):
     panier=models.ForeignKey(Panier,on_delete=models.CASCADE,related_name="contenu")
     produit=models.ForeignKey(Produit,on_delete=models.CASCADE,related_name="contenus_panier")
-    produit_variable=models.ForeignKey(ProduitVariable,on_delete=models.CASCADE,related_name="produit_variable")
-    attribut_valeur=models.ForeignKey(Attribut,on_delete=models.CASCADE,related_name="Valeur_d_attribut")
+    produit_variable=models.ForeignKey(ProduitVariable,on_delete=models.CASCADE,related_name="produit_variable",null=True,blank=True)
+    attribut_valeur=models.ForeignKey(Attribut,on_delete=models.CASCADE,related_name="Valeur_d_attribut",null=True,blank=True)
     quantite=models.IntegerField(default=1)
     is_variable=models.BooleanField(default=False)
     created_at=models.DateTimeField(auto_now_add=True)
