@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,7 +32,9 @@ ALLOWED_HOSTS = [
     "localhost", 
     "127.0.0.1",
     "durama-project.onrender.com",
-    "http://localhost:5173/"
+    "durama-front.vercel.app",
+    ".vercel.app",
+    ".onrender.com",
 ]
 
 
@@ -51,6 +55,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -58,9 +63,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
 ]
 
 ROOT_URLCONF = 'Durama.urls'
@@ -114,18 +116,40 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 REST_FRAMEWORK = {
-    
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     )
-    
 }
 
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS Configuration
+CORS_ALLOW_ALL_ORIGINS = False  # Plus sécurisé de spécifier les origines
+
+CORS_ALLOWED_ORIGINS = [
+    "https://durama-front.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://earl-trademark-comic-pacific.trycloudflare.com",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://durama-front.vercel.app",
+    "https://durama-project.onrender.com",
+    "https://earl-trademark-comic-pacific.trycloudflare.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# Session and CSRF settings for cross-domain requests
+SESSION_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -147,18 +171,16 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     
     'AUTH_HEADER_TYPES': ('Bearer',),               
 }
+
 AUTH_USER_MODEL = "DuramaProject.User"
 
-import os
-
-# ⚙️ Configuration par défaut (pour envoi de vrais mails)
+# Email Configuration
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
@@ -180,29 +202,6 @@ SWAGGER_SETTINGS = {
         }
     }
 }
-MEDIA_URL = '/media/'         # URL pour accéder aux fichiers
+
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
-
-
-CORS_ALLOWED_ORIGINS = [
-    "https://durama-front.vercel.app",
-    "https://earl-trademark-comic-pacific.trycloudflare.com",
-    "http://localhost:5173",
-    
-]
-# settings.py
-SESSION_COOKIE_DOMAIN = ".trycloudflare.com"  # autorise le domaine du tunnel
-CSRF_COOKIE_DOMAIN = ".trycloudflare.com"
-
-SESSION_COOKIE_DOMAIN = ".trycloudflare.com"
-CSRF_COOKIE_DOMAIN = ".trycloudflare.com"
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-CSRF_TRUSTED_ORIGINS = [
-    "http://127.0.0.1:8004",
-    "http://localhost:8004",
-    "https://earl-trademark-comic-pacific.trycloudflare.com",
-    "https://durama-front.vercel.app",
-]
