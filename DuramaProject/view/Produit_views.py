@@ -158,7 +158,7 @@ def produitRecents(request):
     return Response(produitSeriali.data)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def quatre_produit_gros_oeuvres(request,gros_categorie):
     try:
         categorie=Categorie.objects.filter(gros_categorie=gros_categorie)
