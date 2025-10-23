@@ -2,15 +2,15 @@
 
 # --- Base de données ---
 databases:
-  - name: duramadb          # identifiant de la base dans Render
-    plan: free              # plan gratuit
-    databaseName: durama    # nom réel de la base dans PostgreSQL
-    user: durama_user       # utilisateur de la base
+  - name: duramadb
+    plan: free
+    databaseName: durama
+    user: durama_user
 
 # --- Services web (backend Django) ---
 services:
   - type: web
-    name: durama-backend     # nom du service Render
+    name: durama-backend
     plan: free
     env: python
     runtime: python
@@ -20,6 +20,11 @@ services:
       python manage.py collectstatic --noinput
       python manage.py makemigrations --noinput || true
       python manage.py migrate --noinput || true
+      # 🔹 Charger les données depuis data.json si le fichier existe
+      if [ -f data.json ]; then
+        echo "Chargement des données depuis data.json..."
+        python manage.py loaddata data.json
+      fi
 
     startCommand: "gunicorn Durama.wsgi"
 
