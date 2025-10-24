@@ -167,3 +167,13 @@ def quatre_produit_gros_oeuvres(request,gros_categorie):
     produits=Produit.objects.filter(categorie__in=categorie).order_by("?")[:4]
     produitsSeria=ProduitSerialized(produits,many=True)
     return Response(produitsSeria.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def venteHebdo(request):
+    try:
+        produits=Produit.objects.filter().order_by("?")[:4]
+    except Produit.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    produitSerial=ProduitSerialized(produits,many=True)
+    return Response(produitSerial.data)

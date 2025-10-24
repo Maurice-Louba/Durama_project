@@ -59,6 +59,7 @@ urlpatterns = [
     path('quatres-premiers-produits/<str:gros_categorie>/',Produit_views.QuatresPremiers,name="quatre_premier_produits"),
     path('quatres-dernier-produits/',Produit_views.produitRecents,name="quatres_derniers_produits"),
     path('quatres-gros-categorie/<str:gros_categorie>/',Produit_views.quatre_produit_gros_oeuvres,name="quatre_element_du_gros_oveures"),
+    path('vente-hebdo/',Produit_views.venteHebdo,name="Vente_hebommandaire"),
     
     # Images de produits
     path('images/', ProduitIlmage_views.liste_images, name="liste_images"),
