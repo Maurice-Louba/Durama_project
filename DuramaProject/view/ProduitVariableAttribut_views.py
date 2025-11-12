@@ -6,7 +6,7 @@ from ..models import ProduitVariableAttribut, ProduitVariable, Attribut
 from ..serializer import ProduitVariableAttributSerialized
 
 
-# 1️Liste de toutes les associations ProduitVariable <-> Attribut
+# 1️ Liste de toutes les associations ProduitVariable <-> Attribut
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def liste_produit_variable_attributs(request):

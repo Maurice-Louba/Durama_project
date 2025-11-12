@@ -48,7 +48,7 @@ urlpatterns = [
     #Produits
     path('produits/', Produit_views.liste_produits, name="liste_produits"),
     path('produits-aleatoires/', Produit_views.TousLesProduitsAleatoirement, name="produits_aleatoires"),
-    path('produits/<int:produit_id>/', Produit_views.detail_produit, name="detail_produit"),
+    path('produits/<str:slug>/', Produit_views.detail_produit, name="detail_produit"),
     path('creer-produit/', Produit_views.creer_produit, name="creer_produit"),
     path('modifier-produit/<int:produit_id>/', Produit_views.modifier_produit, name="modifier_produit"),
     path('supprimer-produit/<int:produit_id>/', Produit_views.supprimer_produit, name="supprimer_produit"),
@@ -67,6 +67,7 @@ urlpatterns = [
     path('ajouter-image/<int:produit_id>/',  ProduitIlmage_views.ajouter_image, name="ajouter_image"),
     path('details-image/<int:image_id>/',  ProduitIlmage_views.details_image, name="details_image"),
     path('supprimer-image/<int:image_id>/',  ProduitIlmage_views.supprimer_image, name="supprimer_image"),
+    path('images_un_produit/<str:slug>/',ProduitIlmage_views.images_un_produit,name="image_produit"),
     
     # Variantes de produits
     path('variantes/', ProduitVariable_views.liste_variantes, name="liste_variantes"),
@@ -77,6 +78,7 @@ urlpatterns = [
     path('supprimer-variante/<int:variante_id>/', ProduitVariable_views.supprimer_variante, name="supprimer_variante"),
     
     # Associations ProduitVariable <-> Attribut
+    #attributs_par_variante
     path('liens/', ProduitVariableAttribut_views.liste_produit_variable_attributs, name='liste_produit_variable_attributs'),
     path('ajouter-lien/', ProduitVariableAttribut_views.ajouter_produit_variable_attribut, name='ajouter_produit_variable_attribut'),
     path('variantes/<int:produit_variable_id>/attributs/', ProduitVariableAttribut_views.attributs_par_variante, name='attributs_par_variante'),
@@ -148,7 +150,12 @@ urlpatterns = [
     #Utilisateur
     path('infoUser/',user_views.current_user,name="info-utilisateur"),
     #Favori
-    path('nombreFavori/',Favori_views.nombre_de_favorie,name="nombre_de_favori_pour_un_utilisateur")
+    path('nombreFavori/',Favori_views.nombre_de_favorie,name="nombre_de_favori_pour_un_utilisateur"),
+    path('unProduitCommeFavorie/<int:produit_id>/',Favori_views.ajouter_produit_comme_favorie,name="mettre_un_produit_comme_favori"),
+    path('verification/<int:produit_id>/',Favori_views.verification_existance,name="verification_un_existance"),
+    path('supprimer_favori/<int:produit_id>/',Favori_views.supprimer_favorie,name="supprimer_favorie"),
+    path('listProduitFavori/',Favori_views.voir_produit_Favorie,name="liste des produit favories")
+    
 
     
     

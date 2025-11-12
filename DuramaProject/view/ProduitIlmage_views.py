@@ -73,3 +73,14 @@ def supprimer_image(request, image_id):
 
     image.delete()
     return Response({'message': 'Image supprimée avec succès'}, status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def images_un_produit(request,slug):
+    try:
+        produit=Produit.objects.get(slug=slug)
+    except Produit.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    images=ImageProduit.objects.filter(produit=produit)
+    serializer=ImageProduitSerialized(images,many=True)
+    return Response(serializer.data)

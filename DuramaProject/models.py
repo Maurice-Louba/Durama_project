@@ -414,6 +414,8 @@ class Favori(models.Model):
     produit=models.ForeignKey(Produit,on_delete=models.CASCADE,related_name="produit_favoriser")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        unique_together = ('user', 'produit') 
 
 
 

@@ -12,20 +12,29 @@ from rest_framework.response import Response
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def ajouter_produit_comme_favorie(request,produit_id):
+def ajouter_produit_comme_favorie(request, produit_id):
     try:
-        produit=Produit.objects.get(produit_id=produit_id)
+        produit = Produit.objects.get(pk=produit_id)
     except Produit.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    data=FavoriSerialized(data=request.data,context={'request':request})
+        return Response({'error': 'Produit introuvable'}, status=status.HTTP_404_NOT_FOUND)
+
+    # 🔎 Vérifier si le produit est déjà dans les favoris de l'utilisateur
+    favori_existe = Favori.objects.filter(user=request.user, produit=produit).exists()
+    if favori_existe:
+        return Response({'message': 'Ce produit est déjà dans vos favoris.'}, status=status.HTTP_200_OK)
+
+    # ✅ Ajouter si ce n’est pas encore fait
+    data = FavoriSerialized(data=request.data, context={'request': request})
     if data.is_valid():
-        data.save(produit=produit)
-        return Response(status=status.HTTP_201_CREATED)
-    return Response(status=status.HTTP_400_BAD_REQUEST)
+        data.save(produit=produit, user=request.user)
+        return Response({'message': 'Produit ajouté aux favoris.'}, status=status.HTTP_201_CREATED)
+
+    return Response(data.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['GET'])
-@permission_classes([IsADirectoryError])
+@permission_classes([AllowAny])
 def voir_produit_Favorie(request):
     try:
         favorie=Favori.objects.filter(user=request.user)
@@ -36,11 +45,12 @@ def voir_produit_Favorie(request):
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def supprimer_favorie(request,pk):
+def supprimer_favorie(request,produit_id):
     try:
-        favori=Favori.objects.get(pk=pk,user=request.user)
+        produit=Produit.objects.get(pk=produit_id)
     except Favori.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+    favori=Favori.objects.get(produit=produit,user=request.user)
     favori.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -55,3 +65,13 @@ def nombre_de_favorie(request):
     except Favori.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
     return Response(nombreFavoris)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verification_existance(request,produit_id):
+    try:
+        produit=Produit.objects.get(id=produit_id)
+    except Produit.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    resultat = Favori.objects.filter(produit=produit,user=request.user).exists()
+    return Response({'existe': resultat})

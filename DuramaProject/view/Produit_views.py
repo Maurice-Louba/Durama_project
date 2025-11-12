@@ -30,9 +30,9 @@ def TousLesProduitsAleatoirement(request):
 #  2. Détail d’un produit
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def detail_produit(request, produit_id):
+def detail_produit(request, slug):
     try:
-        produit = Produit.objects.get(pk=produit_id)
+        produit = Produit.objects.get(slug=slug)
         produit.increment_views()  # On incrémente le compteur de vues à chaque affichage
     except Produit.DoesNotExist:
         return Response({"error": "Produit non trouvé"}, status=status.HTTP_404_NOT_FOUND)

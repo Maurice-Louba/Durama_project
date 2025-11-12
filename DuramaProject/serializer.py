@@ -136,7 +136,7 @@ class ImageProduitSerialized(serializers.ModelSerializer):
     produit=ProduitSerialized(read_only=True)
     class Meta:
         model=ImageProduit
-        fields=['id','produit','image ','created_at','updated_at']
+        fields=['id','produit','image','created_at','updated_at']
 
 class ProduitVariableSerialized(serializers.ModelSerializer):
     produit=ProduitSerialized(read_only=True)
