@@ -81,7 +81,7 @@ urlpatterns = [
     #attributs_par_variante
     path('liens/', ProduitVariableAttribut_views.liste_produit_variable_attributs, name='liste_produit_variable_attributs'),
     path('ajouter-lien/', ProduitVariableAttribut_views.ajouter_produit_variable_attribut, name='ajouter_produit_variable_attribut'),
-    path('variantes/<int:produit_variable_id>/attributs/', ProduitVariableAttribut_views.attributs_par_variante, name='attributs_par_variante'),
+    path('variantes/<str:slug>/attributs/', ProduitVariableAttribut_views.attributs_par_variante, name='attributs_par_variante'),
     path('attributs/<int:attribut_id>/variantes/', ProduitVariableAttribut_views.variantes_par_attribut, name='variantes_par_attribut'),
     path('supprimer-lien/<int:lien_id>/', ProduitVariableAttribut_views.supprimer_produit_variable_attribut, name='supprimer_produit_variable_attribut'),
     

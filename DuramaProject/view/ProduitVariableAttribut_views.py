@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from ..models import ProduitVariableAttribut, ProduitVariable, Attribut
+from ..models import ProduitVariableAttribut, ProduitVariable, Attribut, Produit
 from ..serializer import ProduitVariableAttributSerialized
 
 
@@ -29,15 +29,16 @@ def ajouter_produit_variable_attribut(request):
 # 3️ Obtenir les attributs d’une variante spécifique
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def attributs_par_variante(request, produit_variable_id):
+def attributs_par_variante(request, slug):
     try:
-        produit_var = ProduitVariable.objects.get(pk=produit_variable_id)
+        produit=Produit.objects.get(slug=slug)
+        produit_var=ProduitVariable.objects.get(produit=produit)
     except ProduitVariable.DoesNotExist:
         return Response({'error': 'Variante introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
     liens = ProduitVariableAttribut.objects.filter(produit_variable=produit_var)
     serializer = ProduitVariableAttributSerialized(liens, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.data, status=status.HTTP_200_OK)    
 
 
 # 4️ Obtenir toutes les variantes d’un attribut donné
@@ -65,3 +66,6 @@ def supprimer_produit_variable_attribut(request, lien_id):
 
     lien.delete()
     return Response({'message': 'Association supprimée avec succès'}, status=status.HTTP_204_NO_CONTENT)
+
+
+#
