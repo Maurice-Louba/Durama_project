@@ -60,6 +60,7 @@ urlpatterns = [
     path('quatres-dernier-produits/',Produit_views.produitRecents,name="quatres_derniers_produits"),
     path('quatres-gros-categorie/<str:gros_categorie>/',Produit_views.quatre_produit_gros_oeuvres,name="quatre_element_du_gros_oveures"),
     path('vente-hebdo/',Produit_views.venteHebdo,name="Vente_hebommandaire"),
+    path('recuperer-deux-produits/',Produit_views.recuperer_deux_dernier_produit,name="recuperer_les_deux_dernier_produits"),
     
     # Images de produits
     path('images/', ProduitIlmage_views.liste_images, name="liste_images"),
@@ -105,6 +106,7 @@ urlpatterns = [
     path('paniers/', Panier_views.liste_paniers, name='liste_paniers'),
     path('paniers/creer/', Panier_views.creer_panier, name='creer_panier'),
     path('paniers/<int:pk>/', Panier_views.panier_detail, name='panier_detail'),
+    
     #PanierItem
     path('panier/items/', PanierItem_views.panier_items, name='panier_items'),
     path('panier/items/<int:pk>/', PanierItem_views.panier_item_detail, name='panier_item_detail'),
@@ -114,6 +116,7 @@ urlpatterns = [
     path('diminuer_quantiter/<int:pk>/',PanierItem_views.dimunuer_quantite,name="diminuer_quantité"),
     path('supprimer_un_item/<int:pk>/',PanierItem_views.supprimer_item,name="supprimer_un_item"),
     path('vider_un_panier/',PanierItem_views.vider_panier,name="supprimer_le_contenu_un_panier"),
+    path('nombre_element/',PanierItem_views.nombre_element_panier,name="nombre_element"),
     #Commande
     path('commande/faire/', Commande_view.faire_une_commande, name='faire_une_commande'),
     path('commandes/', Commande_view.tous_les_commandes, name='tous_les_commandes'),

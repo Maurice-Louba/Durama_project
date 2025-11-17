@@ -178,3 +178,13 @@ def vider_panier(request):
     items.delete()
 
     return Response({"message": "Le panier a été vidé avec succès 🧹"}, status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def nombre_element_panier(request):
+    try:
+        panier = Panier.objects.get(user=request.user,actif=True)
+    except Panier.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    itemsNombre=ContenuPanier.objects.filter(panier=panier).count()
+    return Response(itemsNombre)

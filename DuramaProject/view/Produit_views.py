@@ -177,3 +177,13 @@ def venteHebdo(request):
         return Response(status=status.HTTP_404_NOT_FOUND)
     produitSerial=ProduitSerialized(produits,many=True)
     return Response(produitSerial.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def recuperer_deux_dernier_produit(request):
+    try:
+        produits=Produit.objects.filter().order_by("-created_at")[:2]
+    except Produit.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    produit_serialised=ProduitSerialized(produits,many=True)
+    return Response(produit_serialised.data)
