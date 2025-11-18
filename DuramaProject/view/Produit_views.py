@@ -104,7 +104,7 @@ def produitpargroscategorie(request,gros_categorie):
         categorie=Categorie.objects.filter(gros_categorie=gros_categorie)
     except Categorie.DoesNotExist:
         return Response({"message":"categories non existantes"},status=status.HTTP_404_NOT_FOUND)
-    produit=Produit.objects.filter(categorie__in=categorie)
+    produit=Produit.objects.filter(categorie__in=categorie).order_by("?")
     serializer=ProduitSerialized(produit,many=True)
     return Response(serializer.data)
 
@@ -187,3 +187,15 @@ def recuperer_deux_dernier_produit(request):
         return Response(status=status.HTTP_404_NOT_FOUND)
     produit_serialised=ProduitSerialized(produits,many=True)
     return Response(produit_serialised.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def Produit_par_gros_categorie(request,gros_categorie):
+    try:
+        categorie=Categorie.objects.filter(gros_categorie=gros_categorie)
+    except Categorie.DoesNotExist:
+        return Response({'message':"Categorie non trouvé"},status=status.HTTP_404_NOT_FOUND)
+    produit=Produit.objects.filter(categorie__in=categorie)
+    produitSerial=ProduitSerialized(produit,many=True)
+    return Response(produitSerial.data)
