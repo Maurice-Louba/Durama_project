@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def panier_items(request):
     """
     - GET  : Récupérer tous les items du panier actif de l'utilisateur connecté
@@ -66,7 +66,7 @@ def panier_items(request):
     
     
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def deuxElementsDuPanier(request):
     panier, _ = Panier.objects.get_or_create(user=request.user, actif=True)
     try:
@@ -78,7 +78,7 @@ def deuxElementsDuPanier(request):
 
 
 @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def panier_item_detail(request, pk):
     # Récupérer le panier actif
     panier, _ = Panier.objects.get_or_create(user=request.user, actif=True)
@@ -106,7 +106,7 @@ def panier_item_detail(request, pk):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def total_panier(request):
     """
     Calcule le prix total du panier actif de l'utilisateur connecté.
@@ -130,7 +130,7 @@ def total_panier(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def augmenter_quantite(request,pk):
     try:
         panier_it=ContenuPanier.objects.get(pk=pk)
@@ -141,7 +141,7 @@ def augmenter_quantite(request,pk):
     return Response({"message": "Quantité mise à jour avec succès ✅"})
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def dimunuer_quantite(request,pk):
     try:
         panier_it=ContenuPanier.objects.get(pk=pk)
@@ -153,7 +153,7 @@ def dimunuer_quantite(request,pk):
     return Response({"message": "Quantité mise à jour avec succès ✅"})
 
 @api_view(['DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def supprimer_item(request,pk):
     try:
         item=ContenuPanier.objects.get(pk=pk)
