@@ -86,13 +86,13 @@ def supprimer_produit(request, produit_id):
 #  6. Produits par catégorie
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def produits_par_categorie(request, categorie_id):
+def produits_par_categorie(request, categorieNom):
     try:
-        categorie = Categorie.objects.get(pk=categorie_id)
+        categorie = Categorie.objects.get(nom=categorieNom)
     except Categorie.DoesNotExist:
         return Response({"error": "Catégorie non trouvée"}, status=status.HTTP_404_NOT_FOUND)
 
-    produits = Produit.objects.filter(categorie=categorie).order_by("nom")
+    produits = Produit.objects.filter(categorie=categorie).order_by("?")
     serializer = ProduitSerialized(produits, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 

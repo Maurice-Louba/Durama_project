@@ -38,7 +38,7 @@ def attributs_par_variante(request, slug):
 
     liens = ProduitVariableAttribut.objects.filter(produit_variable=produit_var)
     serializer = ProduitVariableAttributSerialized(liens, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)    
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # 4️ Obtenir toutes les variantes d’un attribut donné

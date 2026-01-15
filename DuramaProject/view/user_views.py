@@ -33,6 +33,7 @@ def current_user(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 @api_view(['DELETE'])
 @permission_classes([AllowAny])
 def deleteUser(request):

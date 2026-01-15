@@ -333,7 +333,7 @@ class ContenuPanier(models.Model):
     panier=models.ForeignKey(Panier,on_delete=models.CASCADE,related_name="contenu")
     produit=models.ForeignKey(Produit,on_delete=models.CASCADE,related_name="contenus_panier")
     produit_variable=models.ForeignKey(ProduitVariable,on_delete=models.CASCADE,related_name="produit_variable",null=True,blank=True)
-    attribut_valeur=models.ForeignKey(Attribut,on_delete=models.CASCADE,related_name="Valeur_d_attribut",null=True,blank=True)
+    attributs = models.ManyToManyField(Attribut, related_name="contenus_panier", blank=True)
     quantite=models.IntegerField(default=1)
     is_variable=models.BooleanField(default=False)
     created_at=models.DateTimeField(auto_now_add=True)
@@ -401,6 +401,7 @@ class CommandeItem(models.Model):
     produit = models.ForeignKey(Produit, on_delete=models.CASCADE)
     produit_variable = models.ForeignKey(ProduitVariable, on_delete=models.SET_NULL, blank=True, null=True)
     quantite = models.PositiveIntegerField(default=1)
+    attributs=models.ManyToManyField(Attribut,related_name="lesattributs",blank=True)
     prix_unitaire = models.DecimalField(max_digits=12, decimal_places=2)
 
     def sous_total(self):

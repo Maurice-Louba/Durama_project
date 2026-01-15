@@ -12,9 +12,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Obtenir le token
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), # Rafraîchir le token
-    path('register/', RegisterView.as_view(), name='register'),
+    path('register/', RegisterView.as_view(), name='register'), #Création de compte
     path("jwt/create/",TokenObtainPairView.as_view(),name="jwt-create"),
-    path('verify_otp/',verify_otp, name='verification otp'),
+    path('verify_otp/',verify_otp, name='verification otp'),#Verification d'opt (code par mail)
     #Categorie
     path('creer-categorie/',categorie_views.createCategorie,name="creer_une_categorie"),
     path('changer-categorie/<int:categorie_id>/',categorie_views.changeCategorie,name="changer_categorie"),
@@ -52,7 +52,7 @@ urlpatterns = [
     path('creer-produit/', Produit_views.creer_produit, name="creer_produit"),
     path('modifier-produit/<int:produit_id>/', Produit_views.modifier_produit, name="modifier_produit"),
     path('supprimer-produit/<int:produit_id>/', Produit_views.supprimer_produit, name="supprimer_produit"),
-    path('produits-par-categorie/<int:categorie_id>/', Produit_views.produits_par_categorie, name="produits_par_categorie"),
+    path('produits-par-categorie/<str:categorieNom>/', Produit_views.produits_par_categorie, name="produits_par_categorie"),
     path('produits-par-souscategorie/<int:souscategorie_id>/', Produit_views.produits_par_souscategorie, name="produits_par_souscategorie"),
     path('produits-par-etiquette/<int:etiquette_id>/', Produit_views.produits_par_etiquette, name="produits_par_etiquette"),
     path('produit-par-gros-categorie/<str:gros_categorie>/',Produit_views.produitpargroscategorie,name="produit_par_grosse_categorie"),
@@ -61,6 +61,7 @@ urlpatterns = [
     path('quatres-gros-categorie/<str:gros_categorie>/',Produit_views.quatre_produit_gros_oeuvres,name="quatre_element_du_gros_oveures"),
     path('vente-hebdo/',Produit_views.venteHebdo,name="Vente_hebommandaire"),
     path('recuperer-deux-produits/',Produit_views.recuperer_deux_dernier_produit,name="recuperer_les_deux_dernier_produits"),
+    
     
     # Images de produits
     path('images/', ProduitIlmage_views.liste_images, name="liste_images"),

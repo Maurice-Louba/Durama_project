@@ -208,13 +208,13 @@ class PanierSerialized(serializers.ModelSerializer):
 
 
 class PanierItemSerialized(serializers.ModelSerializer):
-    # --- Champs en lecture seule (pour GET) ---
+    # Lecture seulement
     panier = PanierSerialized(read_only=True)
     produit = ProduitSerialized(read_only=True)
     produit_variable = ProduitVariableSerialized(read_only=True)
-    attribut_valeur = AttributSerialized(read_only=True)
-
-    # --- Champs en écriture (pour POST/PUT/PATCH) ---
+    attributs = AttributSerialized(many=True, read_only=True)
+    
+    # Écriture seulement
     produit_id = serializers.PrimaryKeyRelatedField(
         queryset=Produit.objects.all(),
         source="produit",
@@ -228,32 +228,87 @@ class PanierItemSerialized(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
-    attribut_valeur_id = serializers.PrimaryKeyRelatedField(
+    attributs_ids = serializers.PrimaryKeyRelatedField(
         queryset=Attribut.objects.all(),
-        source="attribut_valeur",
+        many=True,
         write_only=True,
-        required=False,
-        allow_null=True
+        required=False
+        # NOTE: On enlève source='attributs' pour éviter le problème
     )
 
     class Meta:
         model = ContenuPanier
         fields = [
-            "id",
-            "panier",
-            "produit",
-            "produit_variable",
-            "attribut_valeur",
-            "quantite",
-            "is_variable",
-            "created_at",
-            "updated_at",
-            # champs écriture
-            "produit_id",
-            "produit_variable_id",
-            "attribut_valeur_id",
+            "id", "panier", "produit", "produit_variable", "attributs",
+            "quantite", "is_variable", "created_at", "updated_at",
+            "produit_id", "produit_variable_id", "attributs_ids"
         ]
+        read_only_fields = ["panier", "created_at", "updated_at"]
 
+    def create(self, validated_data):
+        print("=== CREATE PANIER ITEM ===")
+        print(f"Validated data AVANT extraction: {validated_data}")
+        
+        # IMPORTANT: attributs_ids contient des OBJETS Attribut, pas des IDs
+        attributs_objects = validated_data.pop('attributs_ids', [])
+        print(f"Attributs objets extraits: {[str(a) for a in attributs_objects]}")
+        
+        # Extraire les IDs des objets Attribut
+        attributs_ids = [attr.id for attr in attributs_objects]
+        print(f"Attributs IDs extraits: {attributs_ids}")
+        
+        # Le panier doit être dans validated_data (venant de la vue)
+        if 'panier' not in validated_data:
+            # Si absent, le récupérer depuis l'utilisateur
+            request = self.context.get('request')
+            if request and request.user:
+                panier, _ = Panier.objects.get_or_create(user=request.user)
+                validated_data['panier'] = panier
+        
+        print(f"Validated data APRÈS extraction: {validated_data}")
+        
+        # Créer l'item de panier
+        panier_item = ContenuPanier.objects.create(**validated_data)
+        print(f"Panier item créé: {panier_item.id}")
+        
+        # Ajouter les attributs ManyToMany avec les OBJETS (pas les IDs)
+        if attributs_objects:
+            # Utiliser directement les objets Attribut
+            panier_item.attributs.set(attributs_objects)
+            print(f"{len(attributs_objects)} attributs ajoutés")
+        
+        return panier_item
+
+    def update(self, instance, validated_data):
+        print("=== UPDATE PANIER ITEM ===")
+        
+        # Extraire les attributs_ids (objets Attribut)
+        attributs_objects = validated_data.pop('attributs_ids', None)
+        
+        # Mettre à jour les autres champs
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        
+        # Mettre à jour les attributs si fournis
+        if attributs_objects is not None:
+            instance.attributs.set(attributs_objects)
+            print(f"Attributs mis à jour: {len(attributs_objects)}")
+        
+        return instance
+
+    def to_representation(self, instance):
+        """S'assurer que les attributs sont inclus dans la réponse"""
+        representation = super().to_representation(instance)
+        
+        # S'assurer que les attributs sont bien sérialisés
+        representation['attributs'] = AttributSerialized(
+            instance.attributs.all(), 
+            many=True
+        ).data
+        
+        return representation
 
 
         
