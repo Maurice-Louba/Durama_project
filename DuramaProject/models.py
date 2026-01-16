@@ -62,6 +62,10 @@ class User(AbstractUser):
         return self.email
 
 
+
+
+
+
 # ---------------------------
 # OTP Email
 # ---------------------------
@@ -369,6 +373,8 @@ class Commande(models.Model):
 
     adresse_livraison = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

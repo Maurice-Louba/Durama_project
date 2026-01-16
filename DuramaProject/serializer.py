@@ -228,12 +228,11 @@ class PanierItemSerialized(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
-    attributs_ids = serializers.PrimaryKeyRelatedField(
-        queryset=Attribut.objects.all(),
-        many=True,
+    attributs_ids = serializers.ListField(
+        child=serializers.IntegerField(),
         write_only=True,
-        required=False
-        # NOTE: On enlève source='attributs' pour éviter le problème
+        required=False,
+        default=[]
     )
 
     class Meta:
@@ -247,43 +246,39 @@ class PanierItemSerialized(serializers.ModelSerializer):
 
     def create(self, validated_data):
         print("=== CREATE PANIER ITEM ===")
-        print(f"Validated data AVANT extraction: {validated_data}")
+        print(f"Validated data: {validated_data}")
         
-        # IMPORTANT: attributs_ids contient des OBJETS Attribut, pas des IDs
-        attributs_objects = validated_data.pop('attributs_ids', [])
-        print(f"Attributs objets extraits: {[str(a) for a in attributs_objects]}")
-        
-        # Extraire les IDs des objets Attribut
-        attributs_ids = [attr.id for attr in attributs_objects]
-        print(f"Attributs IDs extraits: {attributs_ids}")
+        # Extraire les IDs d'attributs
+        attributs_ids = validated_data.pop('attributs_ids', [])
+        print(f"Attributs IDs reçus: {attributs_ids}")
         
         # Le panier doit être dans validated_data (venant de la vue)
         if 'panier' not in validated_data:
-            # Si absent, le récupérer depuis l'utilisateur
             request = self.context.get('request')
             if request and request.user:
                 panier, _ = Panier.objects.get_or_create(user=request.user)
                 validated_data['panier'] = panier
         
-        print(f"Validated data APRÈS extraction: {validated_data}")
-        
         # Créer l'item de panier
         panier_item = ContenuPanier.objects.create(**validated_data)
         print(f"Panier item créé: {panier_item.id}")
         
-        # Ajouter les attributs ManyToMany avec les OBJETS (pas les IDs)
-        if attributs_objects:
-            # Utiliser directement les objets Attribut
-            panier_item.attributs.set(attributs_objects)
-            print(f"{len(attributs_objects)} attributs ajoutés")
+        # Ajouter les attributs ManyToMany
+        if attributs_ids:
+            attributs = Attribut.objects.filter(id__in=attributs_ids)
+            panier_item.attributs.set(attributs)
+            print(f"{len(attributs)} attributs ajoutés")
+        
+        # IMPORTANT: Recharger l'objet avec les attributs préchargés
+        panier_item = ContenuPanier.objects.prefetch_related('attributs').get(id=panier_item.id)
         
         return panier_item
 
     def update(self, instance, validated_data):
         print("=== UPDATE PANIER ITEM ===")
         
-        # Extraire les attributs_ids (objets Attribut)
-        attributs_objects = validated_data.pop('attributs_ids', None)
+        # Extraire les IDs d'attributs
+        attributs_ids = validated_data.pop('attributs_ids', None)
         
         # Mettre à jour les autres champs
         for attr, value in validated_data.items():
@@ -292,9 +287,13 @@ class PanierItemSerialized(serializers.ModelSerializer):
         instance.save()
         
         # Mettre à jour les attributs si fournis
-        if attributs_objects is not None:
-            instance.attributs.set(attributs_objects)
-            print(f"Attributs mis à jour: {len(attributs_objects)}")
+        if attributs_ids is not None:
+            attributs = Attribut.objects.filter(id__in=attributs_ids)
+            instance.attributs.set(attributs)
+            print(f"Attributs mis à jour: {len(attributs)}")
+        
+        # Recharger avec les attributs
+        instance = ContenuPanier.objects.prefetch_related('attributs').get(id=instance.id)
         
         return instance
 
@@ -302,7 +301,12 @@ class PanierItemSerialized(serializers.ModelSerializer):
         """S'assurer que les attributs sont inclus dans la réponse"""
         representation = super().to_representation(instance)
         
-        # S'assurer que les attributs sont bien sérialisés
+        # S'assurer que les attributs sont chargés
+        if not hasattr(instance, '_prefetched_objects_cache') or 'attributs' not in instance._prefetched_objects_cache:
+            # Précharger les attributs si ce n'est pas déjà fait
+            instance.attributs.all()
+        
+        # Sérialiser les attributs
         representation['attributs'] = AttributSerialized(
             instance.attributs.all(), 
             many=True
@@ -373,10 +377,17 @@ class LivraisonSerialized(serializers.ModelSerializer):
         fields=['id','commande','transporteur','numero_suivi','date_expedition','date_livraison']
 
 class AdresseSerialized(serializers.ModelSerializer):
-    user=UserSerialized(read_only=True)
     class Meta:
-        model=Addresse
-        fields=['id','user','address','ville','pays','telephone','latitude','longitude','location_url','is_default','created_at','updated_at']
+        model = Addresse
+        fields = ['id', 'address', 'ville', 'pays', 'telephone', 'latitude', 'longitude', 'location_url', 'is_default', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'created_at', 'updated_at', 'location_url']
+    
+    def validate(self, data):
+        # Validation personnalisée si nécessaire
+        if not data.get('latitude') or not data.get('longitude'):
+            data['latitude'] = data.get('latitude', 0.0)
+            data['longitude'] = data.get('longitude', 0.0)
+        return data
 
 class FavoriSerialized(serializers.ModelSerializer):
     user=UserSerialized(read_only=True)
@@ -387,3 +398,5 @@ class FavoriSerialized(serializers.ModelSerializer):
     def created(self,**validated_data):
         user=self.context['request'].user
         return Favori.objects.create(user=user,**validated_data)
+
+

@@ -131,6 +131,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://durama-front.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://192.168.56.1:5174",
     "https://earl-trademark-comic-pacific.trycloudflare.com",
 ]
 

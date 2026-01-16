@@ -18,7 +18,8 @@ def panier_items(request):
     panier, _ = Panier.objects.get_or_create(user=request.user, actif=True)
 
     if request.method == 'GET':
-        items = ContenuPanier.objects.filter(panier=panier)
+        # PRÉCHARGER les attributs
+        items = ContenuPanier.objects.filter(panier=panier).prefetch_related('attributs')
         serializer = PanierItemSerialized(items, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -51,11 +52,11 @@ def panier_items(request):
         print(f"Quantité: {quantite}")
         
         # 2. VÉRIFICATION DE DUPLICATION
-        # Chercher les items existants avec le même produit
+        # Chercher les items existants avec le même produit - PRÉCHARGER les attributs
         items_existants = ContenuPanier.objects.filter(
             panier=panier,
             produit_id=produit_id
-        )
+        ).prefetch_related('attributs')
         
         if produit_variable_id:
             items_existants = items_existants.filter(produit_variable_id=produit_variable_id)
@@ -67,7 +68,7 @@ def panier_items(request):
         
         item_existant = None
         for item in items_existants:
-            # Récupérer les attributs de l'item existant
+            # Récupérer les attributs de l'item existant (déjà préchargés)
             item_attributs_ids = set(item.attributs.values_list('id', flat=True))
             
             # Comparer les attributs
@@ -86,6 +87,9 @@ def panier_items(request):
             item_existant.save()
             
             print(f"Quantité après: {item_existant.quantite}")
+            
+            # IMPORTANT: Recharger l'item avec les attributs préchargés
+            item_existant = ContenuPanier.objects.prefetch_related('attributs').get(id=item_existant.id)
             
             # Retourner l'item mis à jour
             serializer = PanierItemSerialized(item_existant, context={'request': request})
@@ -119,6 +123,9 @@ def panier_items(request):
                 item = serializer.save()
                 print(f"Item créé avec ID: {item.id}")
                 print(f"Attributs ajoutés: {item.attributs.count()}")
+                
+                # IMPORTANT: Recharger l'item avec les attributs préchargés
+                item = ContenuPanier.objects.prefetch_related('attributs').get(id=item.id)
                 
                 # Retourner la réponse
                 response_serializer = PanierItemSerialized(item, context={'request': request})

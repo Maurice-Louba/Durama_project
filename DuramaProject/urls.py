@@ -158,7 +158,8 @@ urlpatterns = [
     path('unProduitCommeFavorie/<int:produit_id>/',Favori_views.ajouter_produit_comme_favorie,name="mettre_un_produit_comme_favori"),
     path('verification/<int:produit_id>/',Favori_views.verification_existance,name="verification_un_existance"),
     path('supprimer_favori/<int:produit_id>/',Favori_views.supprimer_favorie,name="supprimer_favorie"),
-    path('listProduitFavori/',Favori_views.voir_produit_Favorie,name="liste des produit favories")
+    path('listProduitFavori/',Favori_views.voir_produit_Favorie,name="liste des produit favories"),
+    
     
 
     
