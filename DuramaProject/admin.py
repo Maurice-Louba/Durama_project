@@ -186,4 +186,51 @@ class PromoCodeUsageAdmin(admin.ModelAdmin):
 @admin.register(Favori)
 class FavoriAdmin(admin.ModelAdmin):
     list_display=('produit','user','created_at','updated_at')
+    
+
+
+from django.contrib import admin
+from .models import ProjetDevis, MateriauDevis
+
+# ==============================
+# Admin pour MateriauDevis
+# ==============================
+class MateriauDevisAdmin(admin.ModelAdmin):
+    list_display = ("nom", "projet", "quantite", "unite", "prix_unitaire", "prix_total")
+    list_filter = ("unite",)
+    search_fields = ("nom",)
+    readonly_fields = ("prix_total",)
+    ordering = ("nom",)
+
+# ==============================
+# Admin pour ProjetDevis
+# ==============================
+class ProjetDevisAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "nom_projet",
+        "user",
+        "ville",
+        "type_projet",
+        "surface",
+        "nombre_etages",
+        "structure",
+        "toiture",
+        "prix_estime",
+        "created_at",
+    )
+    list_filter = ("type_projet", "structure", "finition", "toiture", "objectif")
+    search_fields = ("nom_projet", "ville", "quartier", "user__email")
+    readonly_fields = ("prix_estime", "created_at", "updated_at")
+    ordering = ("-created_at",)
+
+    # Afficher les matériaux liés dans le détail du projet
+    # Facultatif : inline pour MateriauDevis
+    inlines = []
+
+# ==============================
+# Enregistrement des modèles
+# ==============================
+admin.site.register(ProjetDevis, ProjetDevisAdmin)
+admin.site.register(MateriauDevis, MateriauDevisAdmin)
 

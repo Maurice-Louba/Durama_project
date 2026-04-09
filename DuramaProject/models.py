@@ -565,3 +565,93 @@ class PromoCodeUsage(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.promo_code.code} - {self.used_at}'
+
+
+
+
+class ProjetDevis(models.Model):
+    
+    TYPE_PROJET = [
+        ('maison', 'Maison'),
+        ('immeuble', 'Immeuble'),
+        ('commerce', 'Commerce'),
+        ('entrepot', 'Entrepôt'),
+    ]
+
+    TYPE_STRUCTURE = [
+        ('beton', 'Béton armé'),
+        ('brique', 'Brique'),
+        ('mixte', 'Mixte'),
+    ]
+
+    TYPE_SOL = [
+        ('stable', 'Sol stable'),
+        ('sableux', 'Sol sableux'),
+        ('argileux', 'Sol argileux'),
+        ('inconnu', 'Inconnu'),
+    ]
+
+    NIVEAU_FINITION = [
+        ('basique', 'Basique'),
+        ('moyen', 'Moyen'),
+        ('haut', 'Haut standing'),
+    ]
+
+    TYPE_TOITURE = [
+        ('tole', 'Tôle'),
+        ('dalle', 'Dalle béton'),
+        ('tuile', 'Tuile'),
+    ]
+
+    OBJECTIF = [
+        ('construction', 'Construction immédiate'),
+        ('planification', 'Planification'),
+        ('estimation', 'Estimation simple'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="projets")
+
+    nom_projet = models.CharField(max_length=255, blank=True, null=True)
+    ville = models.CharField(max_length=150)
+    quartier = models.CharField(max_length=150, blank=True, null=True)
+
+    type_projet = models.CharField(max_length=50, choices=TYPE_PROJET)
+    surface = models.FloatField()
+    nombre_etages = models.IntegerField(default=1)
+
+    structure = models.CharField(max_length=50, choices=TYPE_STRUCTURE)
+    type_sol = models.CharField(max_length=50, choices=TYPE_SOL, default="inconnu")
+    finition = models.CharField(max_length=50, choices=NIVEAU_FINITION)
+    toiture = models.CharField(max_length=50, choices=TYPE_TOITURE)
+
+    options = models.JSONField(default=list, blank=True)  # garage, plomberie...
+
+    budget = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    objectif = models.CharField(max_length=50, choices=OBJECTIF)
+
+    prix_estime = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Projet {self.nom_projet or self.id} - {self.user.email}"
+
+
+class MateriauDevis(models.Model):
+    
+    projet = models.ForeignKey(ProjetDevis, on_delete=models.CASCADE, related_name="materiaux")
+
+    produit = models.ForeignKey(Produit, on_delete=models.SET_NULL, null=True, blank=True)
+
+    nom = models.CharField(max_length=150)
+    quantite = models.FloatField()
+    unite = models.CharField(max_length=50)  # kg, m3, unité
+
+    prix_unitaire = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    prix_total = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nom} - {self.quantite} {self.unite}"

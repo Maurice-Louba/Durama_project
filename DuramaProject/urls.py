@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from .views import RegisterView,verify_otp
-from DuramaProject.view import Favori_views,Adresse_views,user_views,Paiement_views,Livraison_views,Panier_views,ProduitVariableImage,Etiquette_views,ProduitVariableAttribut_views,ProduitIlmage_views,ProduitVariable_views,TypeAttribut_views,subCategorie_views,Attribut_views,AvisProduit_views,categorie_views,Commande_view,Etiquette_views,PanierItem_views,Produit_views
+from DuramaProject.view import Favori_views,Adresse_views,devis_views,user_views,Paiement_views,Livraison_views,Panier_views,ProduitVariableImage,Etiquette_views,ProduitVariableAttribut_views,ProduitIlmage_views,ProduitVariable_views,TypeAttribut_views,subCategorie_views,Attribut_views,AvisProduit_views,categorie_views,Commande_view,Etiquette_views,PanierItem_views,Produit_views
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -159,6 +159,13 @@ urlpatterns = [
     path('verification/<int:produit_id>/',Favori_views.verification_existance,name="verification_un_existance"),
     path('supprimer_favori/<int:produit_id>/',Favori_views.supprimer_favorie,name="supprimer_favorie"),
     path('listProduitFavori/',Favori_views.voir_produit_Favorie,name="liste des produit favories"),
+    
+    
+    #Devis 
+    path('devis/',devis_views.generer_devis_view,name="Génerer_un_devis"),
+    path('dernier_devis/',devis_views.dernier_devis_view,name="dernier_devis"),
+    path('tous_devis/',devis_views.tous_les_devis_view,name="tous_les_devis"),
+    path('devis/<int:devis_id>/', devis_views.get_devis_detail, name='devis_detail')
     
     
 

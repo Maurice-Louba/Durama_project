@@ -399,4 +399,31 @@ class FavoriSerialized(serializers.ModelSerializer):
         user=self.context['request'].user
         return Favori.objects.create(user=user,**validated_data)
 
+class MateriauDevisSerializer(serializers.ModelSerializer):
+    """Serializer pour les matériaux d'un devis"""
+    produit_nom = serializers.CharField(source='produit.nom', read_only=True, default='')
+    
+    class Meta:
+        model = MateriauDevis
+        fields = [
+            'id', 'nom', 'quantite', 'unite', 
+            'prix_unitaire', 'prix_total', 'produit', 'produit_nom'
+        ]
 
+
+
+
+class ProjetDevisSerializer(serializers.ModelSerializer):
+    """Serializer pour les projets de devis avec leurs matériaux"""
+    materiaux = MateriauDevisSerializer(many=True, read_only=True)
+    prix_estime = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = ProjetDevis
+        fields = [
+            'id', 'nom_projet', 'ville', 'quartier', 'type_projet', 
+            'surface', 'nombre_etages', 'structure', 'type_sol', 
+            'finition', 'toiture', 'options', 'budget', 'objectif', 
+            'prix_estime', 'created_at', 'updated_at', 'materiaux'  # Ajout de 'materiaux'
+        ]
+        read_only_fields = ['prix_estime', 'created_at', 'updated_at', 'materiaux']
