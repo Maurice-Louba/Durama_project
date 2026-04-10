@@ -1,11 +1,12 @@
 from decimal import Decimal
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from ..models import ProjetDevis, Produit, MateriauDevis
 from ..serializer import ProjetDevisSerializer
+from rest_framework.permissions import AllowAny,IsAuthenticated
 
 def get_user_from_request(request):
     """Récupérer l'utilisateur depuis le token JWT"""
@@ -263,7 +264,7 @@ def tous_les_devis_view(request):
 
 @csrf_exempt
 @api_view(['GET'])
-def get_devis_detail(request, devis_id):
+def get_devis_detail(request, devis_idd):
     """Récupérer un devis spécifique avec ses matériaux"""
     try:
         # Récupérer l'utilisateur depuis le token JWT
@@ -282,6 +283,48 @@ def get_devis_detail(request, devis_id):
         serializer = ProjetDevisSerializer(devis)
         
         return Response(serializer.data, status=200)
+        
+    except ProjetDevis.DoesNotExist:
+        return Response(
+            {"error": "Devis non trouvé"}, 
+            status=404
+        )
+    except Exception as e:
+        print(f"Erreur: {e}")
+        import traceback
+        traceback.print_exc()
+        return Response(
+            {"error": str(e)}, 
+            status=400
+        )
+
+
+
+@csrf_exempt
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_devis(request, devis_id):
+    """Supprimer un devis"""
+    try:
+        # Récupérer l'utilisateur depuis le token JWT
+        user = get_user_from_request(request)
+        
+        if not user:
+            return Response(
+                {"error": "Utilisateur non authentifié"}, 
+                status=401
+            )
+        
+        # Récupérer le devis (vérifier qu'il appartient bien à l'utilisateur)
+        devis = ProjetDevis.objects.get(id=devis_id, user=request.user)
+        
+        # Supprimer le devis (les matériaux seront supprimés automatiquement à cause de on_delete=CASCADE)
+        devis.delete()
+        
+        return Response(
+            {"message": "Devis supprimé avec succès"}, 
+            status=200
+        )
         
     except ProjetDevis.DoesNotExist:
         return Response(

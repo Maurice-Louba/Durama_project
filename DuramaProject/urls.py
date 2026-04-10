@@ -165,7 +165,8 @@ urlpatterns = [
     path('devis/',devis_views.generer_devis_view,name="Génerer_un_devis"),
     path('dernier_devis/',devis_views.dernier_devis_view,name="dernier_devis"),
     path('tous_devis/',devis_views.tous_les_devis_view,name="tous_les_devis"),
-    path('devis/<int:devis_id>/', devis_views.get_devis_detail, name='devis_detail')
+    path('deviss/<int:devis_id>/', devis_views.get_devis_detail, name='devis_detail'),
+    path('devis/<int:devis_id>/', devis_views.delete_devis, name='delete_devis'),
     
     
 
