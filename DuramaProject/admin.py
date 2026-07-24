@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import (
     User, EmailOTP, Categorie, SubCategorie, TypeAttribut, Attribut, Etiquette,
     Produit, ImageProduit, ProduitVariable, ProduitVariableAttribut, ProduitVariableImage,
-    AvisProduit, Panier, ContenuPanier, Commande, CommandeItem, Paiement, Livraison,Addresse,PromoCode,PromoCodeUsage,Favori
+    AvisProduit, Panier, ContenuPanier,Vendeur, Commande, CommandeItem, Paiement, Livraison,Addresse,PromoCode,PromoCodeUsage,Favori
 )
 
 # ==============================
@@ -77,7 +77,16 @@ class ProduitVariableInline(admin.TabularInline):
 
 @admin.register(Produit)
 class ProduitAdmin(admin.ModelAdmin):
-    list_display = ('nom', 'type_produit', 'prix_fournisseur', 'prix_vente', 'quantite', 'etat_stock', 'status')
+    list_display = (
+    "nom",
+    "vendeur",
+    "categorie",
+    "type_produit",
+    "prix_vente",
+    "quantite",
+    "etat_stock",
+    "status",
+)
     search_fields = ('nom', 'sku')
     list_filter = ('type_produit', 'etat_stock', 'status', 'categorie')
     inlines = [ImageProduitInline, ProduitVariableInline]
@@ -234,3 +243,33 @@ class ProjetDevisAdmin(admin.ModelAdmin):
 admin.site.register(ProjetDevis, ProjetDevisAdmin)
 admin.site.register(MateriauDevis, MateriauDevisAdmin)
 
+
+@admin.register(Vendeur)
+class VendeurAdmin(admin.ModelAdmin):
+    list_display = (
+        "nom_boutique",
+        "telephone",
+        "ville",
+        "pays",
+        "est_verifie",
+        "actif",
+        "created_at",
+    )
+
+    search_fields = (
+        "nom_boutique",
+        "telephone",
+        "email_commercial",
+        "ville",
+    )
+
+    list_filter = (
+        "est_verifie",
+        "actif",
+        "ville",
+        "pays",
+    )
+
+    prepopulated_fields = {
+        "slug": ("nom_boutique",)
+    }

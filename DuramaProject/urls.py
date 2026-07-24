@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from .views import RegisterView,verify_otp
-from DuramaProject.view import Favori_views,Adresse_views,devis_views,user_views,Paiement_views,Livraison_views,Panier_views,ProduitVariableImage,Etiquette_views,ProduitVariableAttribut_views,ProduitIlmage_views,ProduitVariable_views,TypeAttribut_views,subCategorie_views,Attribut_views,AvisProduit_views,categorie_views,Commande_view,Etiquette_views,PanierItem_views,Produit_views
+from DuramaProject.view import Favori_views,Adresse_views,vendeur_views,devis_views,user_views,Paiement_views,Livraison_views,Panier_views,ProduitVariableImage,Etiquette_views,ProduitVariableAttribut_views,ProduitIlmage_views,ProduitVariable_views,TypeAttribut_views,subCategorie_views,Attribut_views,AvisProduit_views,categorie_views,Commande_view,Etiquette_views,PanierItem_views,Produit_views
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -168,7 +168,20 @@ urlpatterns = [
     path('deviss/<int:devis_id>/', devis_views.get_devis_detail, name='devis_detail'),
     path('devis/<int:devis_id>/', devis_views.delete_devis, name='delete_devis'),
     
-    
+    #Vendeur
+        path("vendeurs/", vendeur_views.liste_vendeurs, name="liste_vendeurs"),
+
+    path(
+        "vendeurs/<slug:slug>/",
+        vendeur_views.detail_vendeur,
+        name="detail_vendeur"
+    ),
+
+    path(
+        "vendeurs/<slug:slug>/produits/",
+        vendeur_views.produits_vendeur,
+        name="produits_vendeur"
+    ),
 
     
     

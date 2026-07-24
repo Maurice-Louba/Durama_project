@@ -67,8 +67,21 @@ class EtiquetteSerailized(serializers.ModelSerializer):
         model=Etiquette
         fields='__all__'
         
+
+class VendeurSerialized(serializers.ModelSerializer):
+    class Meta:
+        model = Vendeur
+        fields = "__all__"
+        
 class ProduitSerialized(serializers.ModelSerializer):
     # Relations en lecture
+    vendeur = VendeurSerialized(read_only=True)
+
+    vendeur_id = serializers.PrimaryKeyRelatedField(
+        queryset=Vendeur.objects.all(),
+        source="vendeur",
+        write_only=True
+    )
     categorie = CategorieSerialized(read_only=True)
     sous_categorie = SousCategorieSerialized(read_only=True)
     etiquette = EtiquetteSerailized(read_only=True)
@@ -100,7 +113,9 @@ class ProduitSerialized(serializers.ModelSerializer):
             "slug",
             "sku",
             "type_produit",
-            "nom_vendeur",
+            #"nom_vendeur",
+            "vendeur",      
+            "vendeur_id",
             "livraison_gratuite",
             "description_courte",
             "description_longue",

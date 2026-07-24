@@ -136,6 +136,58 @@ class Etiquette(models.Model):
     updated_at=models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.name}"
+    
+    
+    
+
+class Vendeur(models.Model):
+
+    nom_boutique = models.CharField(max_length=150)
+
+    slug = models.SlugField(unique=True)
+
+    description = models.TextField(blank=True)
+
+    logo = models.ImageField(
+        upload_to="vendeurs/logo/",
+        null=True,
+        blank=True
+    )
+
+    couverture = models.ImageField(
+        upload_to="vendeurs/couverture/",
+        null=True,
+        blank=True
+    )
+
+    telephone = models.CharField(max_length=20)
+
+    email_commercial = models.EmailField(blank=True)
+
+    adresse = models.TextField(blank=True)
+
+    ville = models.CharField(max_length=100)
+
+    pays = models.CharField(max_length=100, default="Guinée")
+
+    est_verifie = models.BooleanField(default=False)
+
+    actif = models.BooleanField(default=True)
+
+    note = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        default=0
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.nom_boutique
+
+
 # ================================
 # PRODUIT
 # ================================
@@ -170,7 +222,14 @@ class Produit(models.Model):
     )
     type_produit = models.CharField(max_length=50, choices=TYPE_PRODUIT)
 
-    nom_vendeur = models.CharField(max_length=150, blank=True, null=True)
+    #nom_vendeur = models.CharField(max_length=150, blank=True, null=True)
+    vendeur = models.ForeignKey(
+        Vendeur,
+        on_delete=models.CASCADE,
+        related_name="produits",
+        null=True,
+        blank=True
+)
     description_courte = models.TextField(max_length=1500, blank=False, null=False, default="...")
     description_longue = models.TextField(max_length=5000, blank=False, null=False, default="...")
 
