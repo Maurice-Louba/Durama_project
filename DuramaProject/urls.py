@@ -1,20 +1,16 @@
 from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
-from .views import RegisterView,verify_otp
-from DuramaProject.view import Favori_views,Adresse_views,vendeur_views,devis_views,user_views,Paiement_views,Livraison_views,Panier_views,ProduitVariableImage,Etiquette_views,ProduitVariableAttribut_views,ProduitIlmage_views,ProduitVariable_views,TypeAttribut_views,subCategorie_views,Attribut_views,AvisProduit_views,categorie_views,Commande_view,Etiquette_views,PanierItem_views,Produit_views
-from django.conf import settings
-from django.conf.urls.static import static
+from rest_framework_simplejwt.views import TokenRefreshView
+from .views import ConnexionView,RegisterView,verify_otp,renvoyer_otp
+from DuramaProject.view import Favori_views,appel_views,Adresse_views,vendeur_views,devis_views,user_views,Paiement_views,Livraison_views,Panier_views,ProduitVariableImage,Etiquette_views,ProduitVariableAttribut_views,ProduitIlmage_views,ProduitVariable_views,TypeAttribut_views,subCategorie_views,Attribut_views,AvisProduit_views,categorie_views,Commande_view,PanierItem_views,Produit_views
 
 
 urlpatterns = [
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Obtenir le token
+    path('api/token/', ConnexionView.as_view(), name='token_obtain_pair'),  # Obtenir le token
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), # Rafraîchir le token
     path('register/', RegisterView.as_view(), name='register'), #Création de compte
-    path("jwt/create/",TokenObtainPairView.as_view(),name="jwt-create"),
+    path("jwt/create/",ConnexionView.as_view(),name="jwt-create"),
     path('verify_otp/',verify_otp, name='verification otp'),#Verification d'opt (code par mail)
+    path('resend_otp/',renvoyer_otp, name='renvoyer_otp'),#Renvoyer un nouveau code
     #Categorie
     path('creer-categorie/',categorie_views.createCategorie,name="creer_une_categorie"),
     path('changer-categorie/<int:categorie_id>/',categorie_views.changeCategorie,name="changer_categorie"),
@@ -184,11 +180,21 @@ urlpatterns = [
     ),
 
     
+
+    # Demandes d'appel expert
+    path('demandes-appel/', appel_views.liste_demandes_appel, name='liste_demandes_appel'),
+    path('demandes-appel/creer/', appel_views.creer_demande_appel, name='creer_demande_appel'),
+    path('demandes-appel/mes-demandes/', appel_views.mes_demandes_appel, name='mes_demandes_appel'),
+    path('demandes-appel/statistiques/', appel_views.statistiques_demandes_appel, name='statistiques_demandes_appel'),
+    path('demandes-appel/<int:demande_id>/', appel_views.detail_demande_appel, name='detail_demande_appel'),
+    path('demandes-appel/<int:demande_id>/modifier/', appel_views.modifier_demande_appel, name='modifier_demande_appel'),
+    path('demandes-appel/<int:demande_id>/supprimer/', appel_views.supprimer_demande_appel, name='supprimer_demande_appel'),
+    path('demandes-appel/<int:demande_id>/traiter/', appel_views.marquer_demande_traitee, name='marquer_demande_traitee'),
+    path('demandes-appel/<int:demande_id>/planifier/', appel_views.marquer_demande_planifiee, name='marquer_demande_planifiee'),
+    path('demandes-appel/<int:demande_id>/annuler/', appel_views.annuler_demande_appel, name='annuler_demande_appel'),
     
-    
-    
+
     
     
 ]
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# (les fichiers médias sont servis dans Durama/urls.py)

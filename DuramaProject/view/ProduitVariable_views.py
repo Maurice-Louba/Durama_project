@@ -1,76 +1,78 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 from rest_framework import status
-from ..models import ProduitVariable, Produit
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.response import Response
+
+from ..models import Produit, ProduitVariable
 from ..serializer import ProduitVariableSerialized
+
+
+def _variantes():
+    return ProduitVariable.objects.select_related(
+        'produit__vendeur', 'produit__categorie', 'produit__sous_categorie__categorie_principale', 'produit__etiquette'
+    )
 
 
 #  1. Liste de toutes les variantes
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def liste_variantes(request):
-    variantes = ProduitVariable.objects.all().order_by('-created_at')
-    serializer = ProduitVariableSerialized(variantes, many=True)
+    variantes = _variantes().order_by('-created_at')
+    serializer = ProduitVariableSerialized(variantes, many=True, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-#  2. Variantes d’un produit spécifique
+#  2. Variantes d'un produit spécifique
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def variantes_par_produit(request, produit_id):
-    try:
-        produit = Produit.objects.get(pk=produit_id)
-    except Produit.DoesNotExist:
+    if not Produit.objects.filter(pk=produit_id).exists():
         return Response({'error': 'Produit introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
-    variantes = ProduitVariable.objects.filter(produit=produit).order_by('-created_at')
-    serializer = ProduitVariableSerialized(variantes, many=True)
+    variantes = _variantes().filter(produit_id=produit_id).order_by('-created_at')
+    serializer = ProduitVariableSerialized(variantes, many=True, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 #  3. Ajouter une variante à un produit
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def ajouter_variante(request, produit_id):
     try:
         produit = Produit.objects.get(pk=produit_id)
     except Produit.DoesNotExist:
         return Response({'error': 'Produit introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
-    data = request.data.copy()
-    data['produit'] = produit.id
-
-    serializer = ProduitVariableSerialized(data=data)
+    serializer = ProduitVariableSerialized(data=request.data, context={'request': request})
     if serializer.is_valid():
         serializer.save(produit=produit)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-#  4. Détails d’une variante spécifique
+#  4. Détails d'une variante spécifique
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def details_variante(request, variante_id):
     try:
-        variante = ProduitVariable.objects.get(pk=variante_id)
+        variante = _variantes().get(pk=variante_id)
     except ProduitVariable.DoesNotExist:
         return Response({'error': 'Variante introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = ProduitVariableSerialized(variante)
+    serializer = ProduitVariableSerialized(variante, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 #  5. Modifier une variante
 @api_view(['PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def modifier_variante(request, variante_id):
     try:
         variante = ProduitVariable.objects.get(pk=variante_id)
     except ProduitVariable.DoesNotExist:
         return Response({'error': 'Variante introuvable'}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = ProduitVariableSerialized(variante, data=request.data, partial=True)
+    serializer = ProduitVariableSerialized(variante, data=request.data, partial=True, context={'request': request})
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -79,7 +81,7 @@ def modifier_variante(request, variante_id):
 
 #  6. Supprimer une variante
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def supprimer_variante(request, variante_id):
     try:
         variante = ProduitVariable.objects.get(pk=variante_id)

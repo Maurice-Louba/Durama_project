@@ -1,0 +1,21 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Django
+staticfiles/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# NB : db.sqlite3 et media/ restent versionnés pour l'instant car la production (Render + SQLite)
+# les utilise. Voir le compte rendu : ils contiennent des données personnelles.

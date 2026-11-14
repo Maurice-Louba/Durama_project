@@ -1,51 +1,59 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.response import Response
 
-from ..models import Produit, Categorie, SubCategorie, Etiquette
+from ..models import Categorie, Etiquette, Produit, SubCategorie
 from ..serializer import ProduitSerialized
+
+
+def produits_visibles(request):
+    """Le public ne voit que les produits publiés ; le staff voit tout (back-office)."""
+    qs = Produit.objects.select_related(
+        'vendeur', 'categorie', 'sous_categorie__categorie_principale', 'etiquette'
+    )
+    if not (request.user and request.user.is_staff):
+        qs = qs.filter(est_publie=True)
+    return qs
+
+
+def repondre(request, produits, many=True, code=status.HTTP_200_OK):
+    serializer = ProduitSerialized(produits, many=many, context={'request': request})
+    return Response(serializer.data, status=code)
 
 
 #  1. Liste de tous les produits (option tri / recherche simple)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def liste_produits(request):
-    produits = Produit.objects.all().order_by("nom")
-    serializer = ProduitSerialized(produits, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return repondre(request, produits_visibles(request).order_by("nom"))
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def TousLesProduitsAleatoirement(request):
-    try:
-        # Récupération aléatoire des produits
-        produits = Produit.objects.all().order_by('?')  
-        produits_serialized = ProduitSerialized(produits, many=True)
-        return Response(produits_serialized.data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    # Récupération aléatoire des produits
+    return repondre(request, produits_visibles(request).order_by('?'))
 
 
-#  2. Détail d’un produit
+#  2. Détail d'un produit
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def detail_produit(request, slug):
     try:
-        produit = Produit.objects.get(slug=slug)
-        produit.increment_views()  # On incrémente le compteur de vues à chaque affichage
+        produit = produits_visibles(request).get(slug=slug)
     except Produit.DoesNotExist:
         return Response({"error": "Produit non trouvé"}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = ProduitSerialized(produit)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    if not request.user.is_staff:
+        produit.increment_views()  # On incrémente le compteur de vues à chaque affichage client
+    return repondre(request, produit, many=False)
 
 
 #  3. Créer un produit
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def creer_produit(request):
-    serializer = ProduitSerialized(data=request.data)
+    serializer = ProduitSerialized(data=request.data, context={'request': request})
     if serializer.is_valid():
         serializer.save()  # Les champs categorie_id, sous_categorie_id et etiquette_id gèrent la relation
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -55,14 +63,14 @@ def creer_produit(request):
 
 #  4. Modifier un produit
 @api_view(['PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def modifier_produit(request, produit_id):
     try:
         produit = Produit.objects.get(pk=produit_id)
     except Produit.DoesNotExist:
         return Response({"error": "Produit non trouvé"}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = ProduitSerialized(produit, data=request.data, partial=True)
+    serializer = ProduitSerialized(produit, data=request.data, partial=True, context={'request': request})
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -72,7 +80,7 @@ def modifier_produit(request, produit_id):
 
 #  5. Supprimer un produit
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser])
 def supprimer_produit(request, produit_id):
     try:
         produit = Produit.objects.get(pk=produit_id)
@@ -92,21 +100,15 @@ def produits_par_categorie(request, categorieNom):
     except Categorie.DoesNotExist:
         return Response({"error": "Catégorie non trouvée"}, status=status.HTTP_404_NOT_FOUND)
 
-    produits = Produit.objects.filter(categorie=categorie).order_by("?")
-    serializer = ProduitSerialized(produits, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return repondre(request, produits_visibles(request).filter(categorie=categorie).order_by("?"))
+
 
 # produit par grosse categorie
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def produitpargroscategorie(request,gros_categorie):
-    try:
-        categorie=Categorie.objects.filter(gros_categorie=gros_categorie)
-    except Categorie.DoesNotExist:
-        return Response({"message":"categories non existantes"},status=status.HTTP_404_NOT_FOUND)
-    produit=Produit.objects.filter(categorie__in=categorie).order_by("?")
-    serializer=ProduitSerialized(produit,many=True)
-    return Response(serializer.data)
+def produitpargroscategorie(request, gros_categorie):
+    produits = produits_visibles(request).filter(categorie__gros_categorie=gros_categorie).order_by("?")
+    return repondre(request, produits)
 
 
 # 7. Produits par sous-catégorie
@@ -118,9 +120,7 @@ def produits_par_souscategorie(request, souscategorie_id):
     except SubCategorie.DoesNotExist:
         return Response({"error": "Sous-catégorie non trouvée"}, status=status.HTTP_404_NOT_FOUND)
 
-    produits = Produit.objects.filter(sous_categorie=souscategorie).order_by("nom")
-    serializer = ProduitSerialized(produits, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return repondre(request, produits_visibles(request).filter(sous_categorie=souscategorie).order_by("nom"))
 
 
 # 8. Produits par étiquette
@@ -132,70 +132,42 @@ def produits_par_etiquette(request, etiquette_id):
     except Etiquette.DoesNotExist:
         return Response({"error": "Étiquette non trouvée"}, status=status.HTTP_404_NOT_FOUND)
 
-    produits = Produit.objects.filter(etiquette=etiquette).order_by("nom")
-    serializer = ProduitSerialized(produits, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return repondre(request, produits_visibles(request).filter(etiquette=etiquette).order_by("nom"))
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def QuatresPremiers(request,gros_categorie):
-    try:
-        categorie=Categorie.objects.filter(gros_categorie=gros_categorie)
-    except Categorie.DoesNotExist:
-        return Response({'message':"Categorie non trouvé"},status=status.HTTP_404_NOT_FOUND)
-    produit=Produit.objects.filter(categorie__in=categorie)[:5]
-    produitSerial=ProduitSerialized(produit,many=True)
-    return Response(produitSerial.data)
+def QuatresPremiers(request, gros_categorie):
+    produits = produits_visibles(request).filter(categorie__gros_categorie=gros_categorie).order_by('id')[:5]
+    return repondre(request, produits)
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def produitRecents(request):
-    try:
-        produits=Produit.objects.filter().order_by('-created_at')[:4]
-    except Produit.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    produitSeriali=ProduitSerialized(produits,many=True)
-    return Response(produitSeriali.data)
+    return repondre(request, produits_visibles(request).order_by('-created_at')[:4])
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def quatre_produit_gros_oeuvres(request,gros_categorie):
-    try:
-        categorie=Categorie.objects.filter(gros_categorie=gros_categorie)
-    except Categorie.DoesNotExist:
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    produits=Produit.objects.filter(categorie__in=categorie).order_by("?")[:4]
-    produitsSeria=ProduitSerialized(produits,many=True)
-    return Response(produitsSeria.data)
+def quatre_produit_gros_oeuvres(request, gros_categorie):
+    produits = produits_visibles(request).filter(categorie__gros_categorie=gros_categorie).order_by("?")[:4]
+    return repondre(request, produits)
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def venteHebdo(request):
-    try:
-        produits=Produit.objects.filter().order_by("?")[:4]
-    except Produit.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    produitSerial=ProduitSerialized(produits,many=True)
-    return Response(produitSerial.data)
+    return repondre(request, produits_visibles(request).order_by("?")[:4])
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def recuperer_deux_dernier_produit(request):
-    try:
-        produits=Produit.objects.filter().order_by("-created_at")[:2]
-    except Produit.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    produit_serialised=ProduitSerialized(produits,many=True)
-    return Response(produit_serialised.data)
+    return repondre(request, produits_visibles(request).order_by("-created_at")[:2])
 
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def Produit_par_gros_categorie(request,gros_categorie):
-    try:
-        categorie=Categorie.objects.filter(gros_categorie=gros_categorie)
-    except Categorie.DoesNotExist:
-        return Response({'message':"Categorie non trouvé"},status=status.HTTP_404_NOT_FOUND)
-    produit=Produit.objects.filter(categorie__in=categorie)
-    produitSerial=ProduitSerialized(produit,many=True)
-    return Response(produitSerial.data)
+def Produit_par_gros_categorie(request, gros_categorie):
+    return repondre(request, produits_visibles(request).filter(categorie__gros_categorie=gros_categorie))

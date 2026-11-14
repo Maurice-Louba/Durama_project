@@ -1,32 +1,26 @@
 from decimal import Decimal
-from django.db import transaction
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view,permission_classes
-from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from ..models import ProjetDevis, Produit, MateriauDevis
-from ..serializer import ProjetDevisSerializer
-from rest_framework.permissions import AllowAny,IsAuthenticated
 
-def get_user_from_request(request):
-    """Récupérer l'utilisateur depuis le token JWT"""
-    auth = JWTAuthentication()
-    try:
-        auth_header = request.headers.get('Authorization', '')
-        if not auth_header:
-            return None
-        
-        parts = auth_header.split()
-        if len(parts) != 2 or parts[0].lower() != 'bearer':
-            return None
-        
-        token = parts[1]
-        validated_token = auth.get_validated_token(token)
-        user = auth.get_user(validated_token)
-        return user
-    except Exception as e:
-        print(f"Erreur d'authentification: {e}")
-        return None
+from django.db import transaction
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from ..models import MateriauDevis, ProjetDevis, Produit
+from ..serializer import ProjetDevisSerializer
+
+# Valeurs utilisées quand le frontend n'envoie pas le champ (comportement historique)
+VALEURS_PAR_DEFAUT = {
+    "type_projet": "maison",
+    "nombre_etages": 1,
+    "structure": "beton",
+    "type_sol": "inconnu",
+    "finition": "moyen",
+    "toiture": "tuile",
+    "objectif": "construction",
+    "options": [],
+}
+SURFACE_MAX = 100000  # m² par étage
+
 
 def generer_devis(data, user):
     """Génère un devis pour un utilisateur"""
@@ -34,27 +28,12 @@ def generer_devis(data, user):
         # ==============================
         # 1. Création projet
         # ==============================
-        projet = ProjetDevis.objects.create(
-            user=user,
-            nom_projet=data.get("nom_projet", ""),
-            ville=data.get("ville", ""),
-            quartier=data.get("quartier", ""),
-            type_projet=data.get("type_projet", "maison"),
-            surface=Decimal(str(data.get("surface", 0))),
-            nombre_etages=int(data.get("nombre_etages", 1)),
-            structure=data.get("structure", "beton"),
-            type_sol=data.get("type_sol", "inconnu"),
-            finition=data.get("finition", "moyen"),
-            toiture=data.get("toiture", "tuile"),
-            options=data.get("options", []),
-            budget=Decimal(str(data.get("budget", 0))) if data.get("budget") else None,
-            objectif=data.get("objectif", "construction")
-        )
+        projet = ProjetDevis.objects.create(user=user, **data)
 
         # ==============================
         # 2. Surface totale
         # ==============================
-        surface_totale = projet.surface * projet.nombre_etages
+        surface_totale = Decimal(str(projet.surface)) * projet.nombre_etages
 
         # ==============================
         # 3. Ratios matériaux (TOUS en Decimal)
@@ -121,9 +100,9 @@ def generer_devis(data, user):
         # 5. Calcul des prix
         # ==============================
         def get_prix_produit(nom):
-            produit = Produit.objects.filter(nom__icontains=nom).first()
+            produit = Produit.objects.filter(nom__icontains=nom, est_publie=True, prix_vente__isnull=False).first()
             if produit:
-                return produit, Decimal(str(produit.prix_vente))
+                return produit, Decimal(produit.prix_effectif)
             
             prix_marche = {
                 "Ciment": Decimal('75'), "Sable": Decimal('0.5'), "Gravier": Decimal('0.7'),
@@ -148,8 +127,8 @@ def generer_devis(data, user):
                 nom=item["nom"],
                 quantite=float(quantite),  # Convertir en float pour la BD
                 unite=item["unite"],
-                prix_unitaire=prix_unitaire,
-                prix_total=prix_total
+                prix_unitaire=prix_unitaire.quantize(Decimal('0.01')),
+                prix_total=prix_total.quantize(Decimal('0.01'))
             )
 
             materiaux_response.append({
@@ -169,8 +148,8 @@ def generer_devis(data, user):
         imprevus = total * Decimal('0.1')
         total_general = total + main_oeuvre + imprevus
 
-        projet.prix_estime = total_general
-        projet.save()
+        projet.prix_estime = total_general.quantize(Decimal('0.01'))
+        projet.save(update_fields=['prix_estime', 'updated_at'])
 
         return {
             "projet_id": projet.id,
@@ -180,162 +159,64 @@ def generer_devis(data, user):
         }
 
 
-@csrf_exempt
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def generer_devis_view(request):
     """Vue pour générer un devis"""
-    try:
-        print("=" * 50)
-        print("DONNÉES REÇUES:", request.data)
-        print("=" * 50)
-        
-        # Récupérer l'utilisateur
-        user = get_user_from_request(request)
-        
-        if not user:
-            return Response(
-                {"error": "Utilisateur non authentifié"}, 
-                status=401
-            )
-        
-        # Vérifier les champs obligatoires
-        if not request.data.get('ville'):
-            return Response({"error": "Le champ 'ville' est obligatoire"}, status=400)
-        
-        if not request.data.get('surface'):
-            return Response({"error": "Le champ 'surface' est obligatoire"}, status=400)
-        
-        # Générer le devis
-        result = generer_devis(request.data, user)
-        
-        # Récupérer le projet
-        projet = ProjetDevis.objects.get(id=result['projet_id'])
-        
-        # Sérialiser la réponse
-        serializer = ProjetDevisSerializer(projet)
-        response_data = serializer.data
-        response_data['materiaux'] = result['materiaux']
-        
-        return Response(response_data, status=201)
-        
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return Response({"error": str(e)}, status=400)
+    if not request.data.get('ville'):
+        return Response({"error": "Le champ 'ville' est obligatoire"}, status=400)
+    if not request.data.get('surface'):
+        return Response({"error": "Le champ 'surface' est obligatoire"}, status=400)
+
+    donnees = {**VALEURS_PAR_DEFAUT, **{k: v for k, v in request.data.items() if v not in (None, '')}}
+    serializer = ProjetDevisSerializer(data=donnees, context={'request': request})
+    if not serializer.is_valid():
+        return Response({"error": "Données invalides", "errors": serializer.errors}, status=400)
+    if serializer.validated_data['surface'] > SURFACE_MAX:
+        return Response({"error": f"La surface ne peut pas dépasser {SURFACE_MAX} m²"}, status=400)
+
+    # Générer le devis
+    result = generer_devis(serializer.validated_data, request.user)
+
+    projet = ProjetDevis.objects.prefetch_related('materiaux__produit').get(id=result['projet_id'])
+    response_data = ProjetDevisSerializer(projet, context={'request': request}).data
+    response_data['materiaux'] = result['materiaux']
+    return Response(response_data, status=201)
 
 
-@csrf_exempt
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def dernier_devis_view(request):
     """Récupérer le dernier devis"""
-    try:
-        user = get_user_from_request(request)
-        if not user:
-            return Response({"error": "Non authentifié"}, status=401)
-        
-        dernier = ProjetDevis.objects.filter(user=user).order_by('-created_at').first()
-        if not dernier:
-            return Response({"message": "Aucun devis"}, status=404)
-        
-        serializer = ProjetDevisSerializer(dernier)
-        return Response(serializer.data)
-        
-    except Exception as e:
-        return Response({"error": str(e)}, status=400)
+    dernier = ProjetDevis.objects.filter(user=request.user).prefetch_related('materiaux__produit')         .order_by('-created_at').first()
+    if not dernier:
+        return Response({"message": "Aucun devis"}, status=404)
+    return Response(ProjetDevisSerializer(dernier, context={'request': request}).data)
 
 
-@csrf_exempt
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def tous_les_devis_view(request):
     """Récupérer tous les devis"""
-    try:
-        user = get_user_from_request(request)
-        if not user:
-            return Response({"error": "Non authentifié"}, status=401)
-        
-        projets = ProjetDevis.objects.filter(user=user).order_by('-created_at')
-        serializer = ProjetDevisSerializer(projets, many=True)
-        return Response(serializer.data)
-        
-    except Exception as e:
-        return Response({"error": str(e)}, status=400)
+    projets = ProjetDevis.objects.filter(user=request.user).prefetch_related('materiaux__produit')         .order_by('-created_at')
+    return Response(ProjetDevisSerializer(projets, many=True, context={'request': request}).data)
 
 
-
-@csrf_exempt
 @api_view(['GET'])
-def get_devis_detail(request, devis_idd):
-    """Récupérer un devis spécifique avec ses matériaux"""
-    try:
-        # Récupérer l'utilisateur depuis le token JWT
-        user = get_user_from_request(request)
-        
-        if not user:
-            return Response(
-                {"error": "Utilisateur non authentifié"}, 
-                status=401
-            )
-        
-        # Récupérer le devis avec ses matériaux (prefetch_related optimise la requête)
-        devis = ProjetDevis.objects.prefetch_related('materiaux').get(id=devis_id, user=user)
-        
-        # Sérialiser avec le serializer qui inclut les matériaux
-        serializer = ProjetDevisSerializer(devis)
-        
-        return Response(serializer.data, status=200)
-        
-    except ProjetDevis.DoesNotExist:
-        return Response(
-            {"error": "Devis non trouvé"}, 
-            status=404
-        )
-    except Exception as e:
-        print(f"Erreur: {e}")
-        import traceback
-        traceback.print_exc()
-        return Response(
-            {"error": str(e)}, 
-            status=400
-        )
+@permission_classes([IsAuthenticated])
+def get_devis_detail(request, devis_id):
+    """Récupérer un devis spécifique avec ses matériaux (avant : paramètre mal nommé, plantait toujours)"""
+    devis = ProjetDevis.objects.prefetch_related('materiaux__produit').filter(id=devis_id, user=request.user).first()
+    if devis is None:
+        return Response({"error": "Devis non trouvé"}, status=404)
+    return Response(ProjetDevisSerializer(devis, context={'request': request}).data, status=200)
 
 
-
-@csrf_exempt
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_devis(request, devis_id):
-    """Supprimer un devis"""
-    try:
-        # Récupérer l'utilisateur depuis le token JWT
-        user = get_user_from_request(request)
-        
-        if not user:
-            return Response(
-                {"error": "Utilisateur non authentifié"}, 
-                status=401
-            )
-        
-        # Récupérer le devis (vérifier qu'il appartient bien à l'utilisateur)
-        devis = ProjetDevis.objects.get(id=devis_id, user=request.user)
-        
-        # Supprimer le devis (les matériaux seront supprimés automatiquement à cause de on_delete=CASCADE)
-        devis.delete()
-        
-        return Response(
-            {"message": "Devis supprimé avec succès"}, 
-            status=200
-        )
-        
-    except ProjetDevis.DoesNotExist:
-        return Response(
-            {"error": "Devis non trouvé"}, 
-            status=404
-        )
-    except Exception as e:
-        print(f"Erreur: {e}")
-        import traceback
-        traceback.print_exc()
-        return Response(
-            {"error": str(e)}, 
-            status=400
-        )
+    """Supprimer un devis (les matériaux sont supprimés en cascade)"""
+    supprimes, _ = ProjetDevis.objects.filter(id=devis_id, user=request.user).delete()
+    if not supprimes:
+        return Response({"error": "Devis non trouvé"}, status=404)
+    return Response({"message": "Devis supprimé avec succès"}, status=200)

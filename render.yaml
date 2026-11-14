@@ -1,6 +1,7 @@
 # render.yaml pour Durama
 
 # --- Base de données ---
+# (Non utilisée tant que USE_POSTGRES=1 n'est pas défini : voir Durama/settings.py)
 databases:
   - name: duramadb
     plan: free
@@ -15,18 +16,18 @@ services:
     env: python
     runtime: python
 
+    # - plus de « makemigrations » au déploiement : les migrations sont créées en local et commitées
+    # - plus de « || true » : si une migration échoue, le déploiement s'arrête au lieu de lancer
+    #   un site cassé
+    # - plus de « loaddata data.json » : ce fichier est périmé (champs supprimés depuis, le
+    #   chargement échouait) et contenait des données sensibles
     buildCommand: |
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
-      python manage.py makemigrations --noinput || true
-      python manage.py migrate --noinput || true
-      # 🔹 Charger les données depuis data.json si le fichier existe
-      if [ -f data.json ]; then
-        echo "Chargement des données depuis data.json..."
-        python manage.py loaddata data.json
-      fi
+      python manage.py migrate --noinput
+      python manage.py check --deploy --fail-level ERROR
 
-    startCommand: "gunicorn Durama.wsgi"
+    startCommand: "gunicorn Durama.wsgi --timeout 60 --access-logfile -"
 
     envVars:
       - key: DATABASE_URL
@@ -37,3 +38,7 @@ services:
         generateValue: true
       - key: WEB_CONCURRENCY
         value: 4
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false

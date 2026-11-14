@@ -1,1 +1,1 @@
-web: gunicorn Durama.wsgi
+web: gunicorn Durama.wsgi --timeout 60 --access-logfile -
