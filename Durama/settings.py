@@ -55,14 +55,41 @@ DEBUG = env_bool("DJANGO_DEBUG", defaut=not EN_PRODUCTION)
 # SECURITY WARNING: keep the secret key used in production secret!
 # L'ancienne clé était écrite dans le code d'un dépôt public : elle ne doit plus servir
 # (elle permettait de fabriquer des jetons JWT valides pour n'importe quel compte).
+def _cle_secrete_de_secours():
+    """
+    Render sans variable SECRET_KEY : clé aléatoire (jamais écrite dans le code), partagée par
+    tous les workers gunicorn via un fichier créé une seule fois. Elle change à chaque
+    redémarrage du serveur -> les utilisateurs devront se reconnecter.
+    Solution définitive : Render > Environment > SECRET_KEY (bouton « Generate »).
+    """
+    import secrets
+    import sys
+
+    fichier = BASE_DIR / ".cle_secrete_render"
+    try:
+        fd = os.open(fichier, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(secrets.token_urlsafe(64))
+    except FileExistsError:
+        pass  # un autre worker l'a déjà créée
+    print(
+        "ATTENTION : SECRET_KEY absente, clé temporaire générée. Ajoutez SECRET_KEY dans "
+        "Render > Environment pour que les connexions survivent aux redémarrages.",
+        file=sys.stderr,
+    )
+    return fichier.read_text().strip()
+
+
 SECRET_KEY = os.environ.get("SECRET_KEY") or os.environ.get("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
-    if not DEBUG:
+    if EN_PRODUCTION:
+        SECRET_KEY = _cle_secrete_de_secours()
+    elif not DEBUG:
         raise ImproperlyConfigured(
-            "La variable d'environnement SECRET_KEY est obligatoire en production "
-            "(Render > Environment > SECRET_KEY)."
+            "La variable d'environnement SECRET_KEY est obligatoire en production."
         )
-    SECRET_KEY = "dev-uniquement-cle-non-secrete-ne-pas-utiliser-en-production"
+    else:
+        SECRET_KEY = "dev-uniquement-cle-non-secrete-ne-pas-utiliser-en-production"
 
 ALLOWED_HOSTS = [
     "localhost",

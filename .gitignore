@@ -19,3 +19,5 @@ staticfiles/
 
 # NB : db.sqlite3 et media/ restent versionnés pour l'instant car la production (Render + SQLite)
 # les utilise. Voir le compte rendu : ils contiennent des données personnelles.
+.cle_secrete_render
+.demarrage_render.lock
