@@ -3,6 +3,7 @@ URL configuration for Durama project.
 """
 from django.conf import settings
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path, re_path
 from django.views.static import serve
 from drf_yasg import openapi
@@ -13,7 +14,17 @@ admin.site.site_header = "Administration Durama"
 admin.site.site_title = "Durama"
 admin.site.index_title = "Gestion de la marketplace"
 
+def accueil_api(request):
+    """Racine de l'API : confirme que le serveur répond (au lieu d'une page « Not Found »)."""
+    return JsonResponse({
+        "service": "API Durama",
+        "statut": "en ligne",
+        "message": "Le backend fonctionne. Le site est sur https://durama-front.vercel.app",
+    })
+
+
 urlpatterns = [
+    path('', accueil_api, name="accueil_api"),
     path('admin/', admin.site.urls),
     path("", include('DuramaProject.urls')),
 ]
