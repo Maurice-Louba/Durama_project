@@ -245,7 +245,14 @@ CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOWED_ORIGINS = [
     "https://durama-front.vercel.app",
+    # Déploiement Vercel de la branche design-accueil
+    "https://durama-front-git-design-accueil-maurice-loubas-projects.vercel.app",
     *env_liste("CORS_ALLOWED_ORIGINS"),
+]
+# Liens de prévisualisation Vercel du projet (un par branche / déploiement), limités au compte
+# « maurice-loubas-projects » : un autre compte Vercel ne peut pas obtenir ces adresses.
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://durama-front(-[a-z0-9-]+)?-maurice-loubas-projects\.vercel\.app$",
 ]
 if DEBUG:
     CORS_ALLOWED_ORIGINS += [
