@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 
 from .models import (
     Addresse, Attribut, AvisProduit, Categorie, Commande, CommandeItem, ContenuPanier,
-    DemandeAppelExpert, Etiquette, Favori, ImageProduit, Livraison, MateriauDevis, Paiement,
+    DemandeAppelExpert, Etiquette, Favori, MessageContact, ImageProduit, Livraison, MateriauDevis, Paiement,
     Panier, Produit, ProduitVariable, ProduitVariableAttribut, ProduitVariableImage, ProjetDevis,
     PromoCode, PromoCodeUsage, SubCategorie, TypeAttribut, User, Vendeur,
 )
@@ -356,3 +356,21 @@ class VendeurAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         "slug": ("nom_boutique",)
     }
+
+
+
+# ==============================
+# MESSAGES DE CONTACT
+# ==============================
+@admin.register(MessageContact)
+class MessageContactAdmin(admin.ModelAdmin):
+    list_display = ('sujet', 'email', 'nom', 'telephone', 'traite', 'created_at')
+    list_filter = ('traite', 'created_at')
+    search_fields = ('sujet', 'email', 'nom', 'message')
+    readonly_fields = ('user', 'nom', 'email', 'telephone', 'sujet', 'message', 'created_at')
+    list_editable = ('traite',)
+    actions = ['marquer_traites']
+
+    @admin.action(description="Marquer comme traités")
+    def marquer_traites(self, request, queryset):
+        queryset.update(traite=True)

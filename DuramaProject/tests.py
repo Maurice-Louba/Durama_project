@@ -588,3 +588,103 @@ class CompatibiliteFrontendTests(VuesBase):
         # l'ancien est invalidé : le frontend DOIT garder le nouveau
         self.assertEqual(self.anonyme.post('/api/token/refresh/', {'refresh': ancien}, format='json').status_code, 401)
         self.assertEqual(self.anonyme.post('/api/token/refresh/', {'refresh': r.data['refresh']}, format='json').status_code, 200)
+
+
+
+# =====================================================================
+# Mot de passe oublié et page Contact
+# =====================================================================
+from .models import MessageContact
+
+
+class VuesMotDePasseOublieTests(VuesBase):
+    def test_email_inconnu_meme_reponse_sans_envoi(self):
+        r = self.anonyme.post('/mot-de-passe-oublie/', {'email': 'inconnu@test.com'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_reinitialisation_complete(self):
+        # Une session ouverte avant la réinitialisation
+        connexion = self.anonyme.post('/api/token/', {'email': 'client@test.com', 'password': 'MotDePasse!2026'}, format='json')
+        ancien_refresh = connexion.data['refresh']
+
+        r = self.anonyme.post('/mot-de-passe-oublie/', {'email': 'CLIENT@test.com'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+        code = EmailOTP.objects.get(user=self.user).otp_code
+        self.assertIn(code, mail.outbox[0].body)
+
+        mauvais = '000000' if code != '000000' else '111111'
+        r = self.anonyme.post('/reinitialiser-mot-de-passe/', {'email': 'client@test.com', 'code': mauvais, 'mot_de_passe': 'NouveauMdp!2026'}, format='json')
+        self.assertEqual(r.status_code, 400)
+        r = self.anonyme.post('/reinitialiser-mot-de-passe/', {'email': 'client@test.com', 'code': code, 'mot_de_passe': '12345678'}, format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('mot_de_passe', r.data)
+
+        r = self.anonyme.post('/reinitialiser-mot-de-passe/', {'email': 'client@test.com', 'code': code, 'mot_de_passe': 'NouveauMdp!2026'}, format='json')
+        self.assertEqual(r.status_code, 200, r.data)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NouveauMdp!2026'))
+        # Le code ne sert qu'une fois, et l'ancienne session est révoquée
+        r = self.anonyme.post('/reinitialiser-mot-de-passe/', {'email': 'client@test.com', 'code': code, 'mot_de_passe': 'AutreMdp!2026'}, format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(self.anonyme.post('/api/token/refresh/', {'refresh': ancien_refresh}, format='json').status_code, 401)
+
+    def test_force_brute_invalide_le_code(self):
+        self.anonyme.post('/mot-de-passe-oublie/', {'email': 'client@test.com'}, format='json')
+        code = EmailOTP.objects.get(user=self.user).otp_code
+        mauvais = '000000' if code != '000000' else '111111'
+        for _ in range(5):
+            self.anonyme.post('/reinitialiser-mot-de-passe/', {'email': 'client@test.com', 'code': mauvais, 'mot_de_passe': 'NouveauMdp!2026'}, format='json')
+        r = self.anonyme.post('/reinitialiser-mot-de-passe/', {'email': 'client@test.com', 'code': code, 'mot_de_passe': 'NouveauMdp!2026'}, format='json')
+        self.assertEqual(r.status_code, 400)
+
+
+class VuesContactTests(VuesBase):
+    donnees = {'nom': 'Awa Camara', 'email': 'Awa@Exemple.com', 'telephone': '+224 622 00 00 00',
+               'sujet': 'Livraison à Kipé', 'message': 'Bonjour, livrez-vous à Kipé le samedi ?'}
+
+    def test_message_anonyme_enregistre(self):
+        r = self.anonyme.post('/contact/', self.donnees, format='json')
+        self.assertEqual(r.status_code, 201, r.data)
+        m = MessageContact.objects.get()
+        self.assertEqual(m.email, 'awa@exemple.com')
+        self.assertIsNone(m.user)
+        self.assertFalse(m.traite)
+
+    def test_message_utilisateur_connecte_lie_au_compte(self):
+        self.assertEqual(self.client_user.post('/contact/', self.donnees, format='json').status_code, 201)
+        self.assertEqual(MessageContact.objects.get().user, self.user)
+
+    def test_validation(self):
+        r = self.anonyme.post('/contact/', {**self.donnees, 'message': 'court', 'email': 'pas-un-email'}, format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('message', r.data)
+        self.assertIn('email', r.data)
+        self.assertEqual(MessageContact.objects.count(), 0)
+
+    @override_settings(EMAIL_HOST_USER='equipe@durama.test')
+    def test_equipe_prevenue_par_email(self):
+        self.anonyme.post('/contact/', self.donnees, format='json')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['equipe@durama.test'])
+
+    def test_anti_spam(self):
+        codes = [self.anonyme.post('/contact/', self.donnees, format='json').status_code for _ in range(7)]
+        self.assertIn(429, codes)
+
+
+
+class ChargerDemoTests(BaseTestCase):
+    def test_chargement_idempotent_puis_suppression(self):
+        from django.core.management import call_command
+        from io import StringIO
+        call_command("charger_demo", stdout=StringIO())
+        nb = Produit.objects.filter(sku__startswith="DEMO-").count()
+        self.assertGreater(nb, 20)
+        self.assertTrue(Produit.objects.filter(sku__startswith="DEMO-", categorie__gros_categorie="securité").exists())
+        call_command("charger_demo", stdout=StringIO())  # pas de doublons
+        self.assertEqual(Produit.objects.filter(sku__startswith="DEMO-").count(), nb)
+        call_command("charger_demo", "--supprimer", stdout=StringIO())
+        self.assertFalse(Produit.objects.filter(sku__startswith="DEMO-").exists())
+        self.assertTrue(Produit.objects.filter(pk=self.produit.pk).exists())  # les vrais produits restent

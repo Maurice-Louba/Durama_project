@@ -1,7 +1,9 @@
 import logging
 
 from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.utils.html import escape
@@ -9,6 +11,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -262,3 +265,98 @@ def renvoyer_otp(request):
             return Response({'error': "Impossible d'envoyer l'email, réessayez plus tard"}, status=503)
     # Même réponse que le compte existe ou non : on ne révèle pas quels emails sont inscrits
     return Response({'message': 'Si un compte non activé existe pour cet email, un nouveau code a été envoyé.'})
+
+
+# ==============================
+# MOT DE PASSE OUBLIÉ
+# ==============================
+def envoyer_email_reinitialisation(user, otp):
+    sujet = "Durama — Code de réinitialisation de votre mot de passe"
+    texte = (
+        f"Bonjour {user.first_name or 'cher client'},\n\n"
+        f"Votre code de réinitialisation est : {otp.otp_code}\n"
+        f"Il expire dans {OTP_VALIDITE_MINUTES} minutes.\n\n"
+        "Si vous n'avez pas demandé de nouveau mot de passe, ignorez cet e-mail : "
+        "votre mot de passe actuel reste valable.\n\nL'équipe Durama"
+    )
+    html = f"""
+<div style="font-family:Arial,sans-serif;background:#f6f6f4;padding:32px 0">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb">
+    <div style="background:#111827;padding:28px;text-align:center;border-bottom:3px solid #ea580c">
+      <h1 style="color:#fff;margin:0;font-size:26px">DURAMA</h1>
+    </div>
+    <div style="padding:32px">
+      <p style="color:#111827;font-size:16px">Bonjour <strong>{escape(user.first_name or "cher client")}</strong>,</p>
+      <p style="color:#374151;font-size:15px;line-height:1.6">Voici votre code pour choisir un nouveau mot de passe :</p>
+      <p style="text-align:center;margin:28px 0">
+        <span style="display:inline-block;font-size:34px;font-weight:700;letter-spacing:8px;padding:14px 24px;border:2px solid #111827;border-radius:8px">{otp.otp_code}</span>
+      </p>
+      <p style="color:#6b7280;font-size:14px;text-align:center">Code valable {OTP_VALIDITE_MINUTES} minutes.</p>
+      <p style="color:#9ca3af;font-size:12px;margin-top:28px">Vous n'êtes pas à l'origine de cette demande ? Ignorez cet e-mail : votre mot de passe actuel reste valable.</p>
+    </div>
+  </div>
+</div>"""
+    email = EmailMultiAlternatives(
+        sujet, texte, getattr(settings, 'DEFAULT_FROM_EMAIL', None) or 'no-reply@durama.com', [user.email]
+    )
+    email.attach_alternative(html, "text/html")
+    email.send()
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+@throttle_classes([OTPThrottle])
+def mot_de_passe_oublie(request):
+    """Envoie un code de réinitialisation à un compte actif. Réponse identique que le compte existe ou non."""
+    email = (request.data.get('email') or '').strip()
+    user = User.objects.filter(email__iexact=email, is_active=True).first() if email else None
+    if user is not None:
+        otp = nouvel_otp(user)
+        try:
+            envoyer_email_reinitialisation(user, otp)
+        except Exception:
+            # Pas de 503 ici : il révélerait que le compte existe
+            logger.exception("Échec d'envoi du code de réinitialisation à %s", user.email)
+    return Response({'message': "Si un compte existe pour cet e-mail, un code de réinitialisation vient d'être envoyé."})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+@throttle_classes([OTPThrottle])
+def reinitialiser_mot_de_passe(request):
+    """Vérifie le code reçu par e-mail puis enregistre le nouveau mot de passe."""
+    email = (request.data.get('email') or '').strip()
+    code = str(request.data.get('code') or '').strip()
+    mot_de_passe = request.data.get('mot_de_passe') or ''
+
+    user = User.objects.filter(email__iexact=email, is_active=True).first() if email else None
+    otp_obj = EmailOTP.objects.filter(user=user).order_by('-created_at').first() if user else None
+    if otp_obj is None:
+        return Response({'error': 'Code invalide ou expiré'}, status=400)
+    if otp_obj.is_expired():
+        otp_obj.delete()
+        return Response({'error': 'Code expiré, demandez-en un nouveau'}, status=400)
+    if otp_obj.otp_code != code:
+        cle = f"otp_essais:{user.pk}"
+        essais = cache.get(cle, 0) + 1
+        cache.set(cle, essais, timeout=OTP_VALIDITE_MINUTES * 60)
+        if essais >= OTP_ESSAIS_MAX:
+            otp_obj.delete()
+            cache.delete(cle)
+            return Response({'error': 'Trop de tentatives, demandez un nouveau code'}, status=400)
+        return Response({'error': 'Code invalide ou expiré'}, status=400)
+
+    try:
+        validate_password(mot_de_passe, user=user)
+    except DjangoValidationError as e:
+        return Response({'mot_de_passe': list(e.messages)}, status=400)
+
+    with transaction.atomic():
+        user.set_password(mot_de_passe)
+        user.save(update_fields=['password'])
+        EmailOTP.objects.filter(user=user).delete()
+        # Déconnecte toutes les sessions ouvertes avec l'ancien mot de passe
+        for jeton in OutstandingToken.objects.filter(user=user):
+            BlacklistedToken.objects.get_or_create(token=jeton)
+    cache.delete(f"otp_essais:{user.pk}")
+    return Response({'message': 'Mot de passe modifié. Vous pouvez vous connecter.'})

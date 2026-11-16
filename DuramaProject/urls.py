@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import ConnexionView,RegisterView,verify_otp,renvoyer_otp
+from .views import ConnexionView,RegisterView,verify_otp,renvoyer_otp,mot_de_passe_oublie,reinitialiser_mot_de_passe
+from DuramaProject.view import contact_views
 from DuramaProject.view import Favori_views,appel_views,Adresse_views,vendeur_views,devis_views,user_views,Paiement_views,Livraison_views,Panier_views,ProduitVariableImage,Etiquette_views,ProduitVariableAttribut_views,ProduitIlmage_views,ProduitVariable_views,TypeAttribut_views,subCategorie_views,Attribut_views,AvisProduit_views,categorie_views,Commande_view,PanierItem_views,Produit_views
 
 
@@ -11,6 +12,9 @@ urlpatterns = [
     path("jwt/create/",ConnexionView.as_view(),name="jwt-create"),
     path('verify_otp/',verify_otp, name='verification otp'),#Verification d'opt (code par mail)
     path('resend_otp/',renvoyer_otp, name='renvoyer_otp'),#Renvoyer un nouveau code
+    path('mot-de-passe-oublie/', mot_de_passe_oublie, name='mot_de_passe_oublie'),  # envoi d'un code par e-mail
+    path('reinitialiser-mot-de-passe/', reinitialiser_mot_de_passe, name='reinitialiser_mot_de_passe'),
+    path('contact/', contact_views.envoyer_message_contact, name='envoyer_message_contact'),  # page Contact
     #Categorie
     path('creer-categorie/',categorie_views.createCategorie,name="creer_une_categorie"),
     path('changer-categorie/<int:categorie_id>/',categorie_views.changeCategorie,name="changer_categorie"),

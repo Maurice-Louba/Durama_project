@@ -21,7 +21,7 @@ def _preparer_render():
     Sur Render : applique les migrations et prépare les fichiers statiques au démarrage, même si
     la « Build Command » du tableau de bord se limite à « pip install -r requirements.txt ».
     Un verrou de fichier évite que plusieurs workers gunicorn le fassent en même temps.
-    Désactivable avec AUTO_MIGRATE=0.
+    Désactivable avec AUTO_MIGRATE=0 (et la démo seule avec CHARGER_DEMO=0).
     """
     if os.environ.get("RENDER", "").lower() != "true" or os.environ.get("AUTO_MIGRATE", "1") == "0":
         return
@@ -35,6 +35,13 @@ def _preparer_render():
         try:
             call_command("migrate", interactive=False, verbosity=1)
             call_command("collectstatic", interactive=False, verbosity=0)
+            # Phase de développement : produits de démonstration (sans doublons).
+            # À désactiver avec CHARGER_DEMO=0 quand le catalogue réel sera en place.
+            if os.environ.get("CHARGER_DEMO", "1") != "0":
+                try:
+                    call_command("charger_demo")
+                except Exception as erreur:  # la démo ne doit jamais empêcher le site de démarrer
+                    print(f"charger_demo ignoré : {erreur}")
         finally:
             fcntl.flock(verrou, fcntl.LOCK_UN)
 

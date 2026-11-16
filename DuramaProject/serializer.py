@@ -11,7 +11,7 @@ from .models import (
     Addresse, Attribut, AvisProduit, Categorie, Commande, CommandeItem, ContenuPanier,
     DemandeAppelExpert, Etiquette, Favori, ImageProduit, Livraison, MateriauDevis, Paiement,
     Panier, Produit, ProduitVariable, ProduitVariableAttribut, ProduitVariableImage,
-    ProjetDevis, SubCategorie, TypeAttribut, Vendeur,
+    ProjetDevis, SubCategorie, TypeAttribut, Vendeur, MessageContact,
 )
 
 
@@ -865,3 +865,30 @@ class DemandeAppelExpertSerializer(BaseModelSerializer):
 
         instance.save()
         return instance
+
+
+class MessageContactSerializer(serializers.ModelSerializer):
+    """Formulaire de la page Contact (l'utilisateur éventuel est ajouté par la vue)."""
+
+    class Meta:
+        model = MessageContact
+        fields = ['nom', 'email', 'telephone', 'sujet', 'message']
+        extra_kwargs = {'nom': {'required': False}, 'telephone': {'required': False}}
+
+    def validate_email(self, value):
+        return value.strip().lower()
+
+    def validate_telephone(self, value):
+        return valider_telephone(value)
+
+    def validate_sujet(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Indiquez un sujet.")
+        return value
+
+    def validate_message(self, value):
+        value = value.strip()
+        if len(value) < 10:
+            raise serializers.ValidationError("Votre message est trop court (10 caractères minimum).")
+        return value

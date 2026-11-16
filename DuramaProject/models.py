@@ -955,3 +955,26 @@ class DemandeAppelExpert(models.Model):
             delta = timezone.now() - self.created_at
             return delta.total_seconds() / 3600
         return 0
+
+
+class MessageContact(models.Model):
+    """Message envoyé depuis la page Contact du site (traité depuis l'admin)."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="messages_contact",
+    )
+    nom = models.CharField(max_length=150, blank=True)
+    email = models.EmailField()
+    telephone = models.CharField(max_length=20, blank=True)
+    sujet = models.CharField(max_length=200)
+    message = models.TextField(max_length=3000)
+    traite = models.BooleanField(default=False, help_text="Cocher une fois la réponse envoyée")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Message de contact"
+        verbose_name_plural = "Messages de contact"
+
+    def __str__(self):
+        return f"{self.sujet} — {self.email}"
